@@ -19,22 +19,34 @@
 (defvar project--max-files 5
   "Number of files to open for a project.")
 
-(defun project-roots (&optional files)
-  "Project roots of files if they are in a git repository. If
-files is not provided use recent files."
-  (delete-if-not
-   (apply-partially 'string-prefix-p "/")
-   (delete-dups
-    (mapcar
-     (lambda (d)
-       (s-trim
-        (shell-command-to-string
-         (format "git -C %s rev-parse --show-toplevel" d))))
-     (delete-dups
-      (mapcar
-       'file-directory-name
-       (delete-if-not 'file-exists-p
-                      (or files recentf-list))))))))
+(defun project-open-roots ()
+  "Open projects."
+  (delete-dups
+   (delete-if #'null
+              (mapcar
+               (lambda (b) (with-current-buffer b (current-project-root)))
+               (buffer-list)))))
+
+(defun project-roots (files &optional shift-current)
+  "Project roots of FILES if they are in a git repository. If
+FILES is not provided use recent files."
+  (let ((roots
+         (delete-if-not
+          (apply-partially 'string-prefix-p "/")
+          (delete-dups
+           (mapcar
+            (lambda (d)
+              (s-trim
+               (shell-command-to-string
+                (format "git -C %s rev-parse --show-toplevel" d))))
+            (delete-dups
+             (mapcar
+              'file-directory-name
+              (delete-if-not 'file-exists-p files))))))))
+    (if (and shift-current (string= (car roots) (current-project-root)))
+        (append (cdr roots) (list (car roots)))
+      roots)))
+
 
 (defun project-buffer-file-name (buffer)
   "Buffer file name or default-directory"
@@ -79,10 +91,10 @@ are the filesystem files."
                 (project-recent-files project)
                 (project-common-files project))))
 
-(defun project-read-root (pred)
-  (let ((roots (project-roots)))
+(defun project-read-root (pred filename-list &optional shift-current)
+  "Read root of project for a list of files. If not current "
+  (let ((roots (project-roots filename-list shift-current)))
     (ido-completing-read pred roots nil t)))
-
 
 (defun project-buffers (project)
   "A list of open buffers in the project. Ordered as they were in
@@ -96,7 +108,7 @@ buffer-list."
 list and prioritize recent buffers over unopened ones. Unopened
 buffers are ones that have recent commits."
   (interactive
-   (list (project-read-root "Open project: ")))
+   (list (project-read-root "Open project: " recentf-list t)))
   (let ((bufs (project-buffers project)))
     ;; First get all the files we dont have, they will mess up the
     ;; buffer-list ordering
@@ -104,18 +116,56 @@ buffers are ones that have recent commits."
     ;; Restore ordering for our old buffers and put them at the top.
     (mapc 'switch-to-buffer (reverse bufs))))
 
-(defun bury-project ()
-  "Burry the current project."
-  (interactive)
-  (let ((root (car (project-roots))))
-    (dolist (b (buffer-list))
-      (when (file-in-directory-p (project-buffer-file-name b) root)
-        (with-current-buffer b (bury-buffer))))
-    (message (format "Buried buffers under '%s'" root))))
+(defun current-project-root ()
+  (or current-project
+      (let ((path (git--exec-string-no-error "rev-parse" "--show-toplevel")))
+        (when (s-starts-with? "/" path)
+          (setq-local current-project (s-trim path))))))
+
+(defun bury-project (root)
+  "Bury all the buffers that have default directory in a
+project."
+  (interactive (list (project-read-root
+                      "Bury project: "
+                      (mapcar (lambda (b)
+                                (with-current-buffer b default-directory))
+                              (buffer-list)))))
+  (dolist (b (buffer-list))
+    (when (file-in-directory-p (project-buffer-file-name b) root)
+      (with-current-buffer b (bury-buffer))))
+  (message (format "Buried buffers '%s'" root)))
+
+(defun kill-project (root)
+  "Kill all the buffers that have default directory in a
+project."
+  (interactive (list (project-read-root
+                      "Kill project: "
+                      (mapcar (lambda (b)
+                                (with-current-buffer b default-directory))
+                              (buffer-list)))))
+  (dolist (b (buffer-list))
+    (when (file-in-directory-p (project-buffer-file-name b) root)
+      (kill-buffer b)))
+  (message (format "Killed buffers '%s'" root)))
+
+(defun switch-project (root)
+  "Kill all the buffers that have default directory in a
+project."
+  (interactive (list (project-read-root
+                      "Switch to project: "
+                      (mapcar (lambda (b)
+                                (with-current-buffer b default-directory))
+                              (buffer-list)) t)))
+  (dolist (b (reverse (buffer-list)))
+    (when (file-in-directory-p (project-buffer-file-name b) root)
+      (switch-to-buffer b)))
+  (message (format "Switched to buffers '%s'" root)))
 
 (global-set-key (kbd "C-c p f") 'project-open)
 (global-set-key (kbd "C-c p o") 'project-open)
 (global-set-key (kbd "C-c p b") 'bury-project)
+(global-set-key (kbd "C-c p k") 'kill-project)
+(global-set-key (kbd "C-c p s") 'switch-project)
 
 (provide 'fd-projects)
 ;;; fd-projects.el ends here
