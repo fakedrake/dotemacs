@@ -12,12 +12,13 @@
   (server-start))
 
 ;; Configurations
+(cua-mode -1)
 (delete-selection-mode t)
 (setq backup-directory-alist (list (cons "." (my-expand-path "backup/"))))
 (set-input-method 'greek)
 (toggle-input-method)
 (setq scroll-step 1)
-(global-set-key "\C-Z" 'revert-buffer)
+(global-set-key (kbd "C-z") 'revert-buffer)
 
 (put 'set-goal-column 'disabled nil)
 (put 'narrow-to-region 'disabled nil)
@@ -88,15 +89,9 @@ parent."
 
 (eval-after-load 'tramp '(setenv "SHELL" "/bin/bash"))
 
-(defvar-local untabify-on-save nil
-  "Automatically untabify the buffer before saving")
 (defadvice save-buffer (around save-buffer-as-root-around activate)
   "Use sudo to save the current buffer."
   (interactive "p")
-  (when untabify-on-save
-    (save-excursion
-      (mark-whole-buffer)
-      (call-interactively 'untabify)))
   (if (and (buffer-file-name)
 	   (file-accessible-directory-p
 	    (file-directory-name (buffer-file-name)))
@@ -347,5 +342,7 @@ ignore buffers with."
 
 (windmove-default-keybindings)
 (setq windmove-wrap-around t)
+
+(global-set-key (kbd "M-q") 'fill-paragraph)
 
 (provide 'fd-misc)

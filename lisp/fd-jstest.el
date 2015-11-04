@@ -69,4 +69,9 @@
       (js2-maybe-jump-test))
     (error "Not in javascript file.")))
 
+
+(defun js2-test-this-file ()
+  (interactive)
+  (compilation-start (format "mocha %s" (js2-test-file (buffer-file-name)))))
+
 (provide 'fd-jstest)

@@ -2,6 +2,5 @@
 # name: ipdb
 # contributor: Chris Perivolaroulos
 # key: pdb
-# binding: C-c p
 # --
 import pdb; pdb.set_trace()

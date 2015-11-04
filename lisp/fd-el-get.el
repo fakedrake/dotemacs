@@ -57,6 +57,7 @@
 	lua-mode
 	textile-mode
 	haskell-mode
+        elm-mode
 	js2-mode
 	coffee-mode
         ;; flymake-coffee-load
@@ -67,6 +68,7 @@
 	cider
 	; ac-nrepl
 	clojure-mode
+        nodejs-repl
 	;; cscope
 	cmake-mode
 	multi-term
@@ -82,17 +84,11 @@
 	ggtags
 	zencoding-mode
 	git-emacs
+	magit
 	bm
 	compilation-setup
-
         google-c-style
-
-        emacs-w3m
-        w3m-type-ahead
-
-        web-mode
-        twittering-mode
-        ))
+        web-mode))
 
 (setq
  el-get-sources
@@ -189,6 +185,12 @@
 	  :type github
 	  :pkgname "mooz/js-doc")
 
+   (:name elm-mode
+	  :description "Elm mode for emacs"
+          :depends (f let-alist s)
+	  :type github
+	  :pkgname "jcollard/elm-mode")
+
    (:name js-beautify
 	  :description "Beautify on node"
 	  :type npm
@@ -208,13 +210,6 @@
        :submodule nil
        :features ein)))
 
-;;
-;; Some recipes require extra tools to be installed
-;;
-;; Note: el-get-install requires git, so we know we have at least that.
-;;
-(when (el-get-executable-find "cvs")
-  (add-to-list 'el-get-sources 'emacs-goodies-el)) ; the debian addons for emacs
 
 (when (el-get-executable-find "svn")
   (loop for p in '(psvn    		; M-x svn-status

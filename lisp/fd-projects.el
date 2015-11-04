@@ -83,13 +83,20 @@ are the filesystem files."
 (defun project-recent-files (project)
   "Recently opened files of project"
   (remove-if-not (apply-partially 'project-file-in-project project)
-                 recentf-list))
+                 (project-all-recent-files)))
 
 (defun project-files (project)
   "A prioritized list of some of the files in project."
   (delete-dups (append
                 (project-recent-files project)
                 (project-common-files project))))
+
+(defun project-proper-filename (fname)
+  "Check for string names not being tramp since it's not certain
+that they will be findable."
+  (not (delete-if 'null (mapcar
+                         (lambda (pre) (string-prefix-p pre fname))
+                         '("/sudo:" "/ssh:")))))
 
 (defun project-read-root (pred filename-list &optional shift-current)
   "Read root of project for a list of files. If not current "
@@ -103,12 +110,15 @@ buffer-list."
    (apply-partially 'project-buffer-in-project project)
    (buffer-list)))
 
+(defun project-all-recent-files (&optional files)
+  (delete-if-not 'project-proper-filename (or files recentf-list)))
+
 (defun project-open (project)
   "Open project. Preserve the sequence of buffers in the buffer
 list and prioritize recent buffers over unopened ones. Unopened
 buffers are ones that have recent commits."
   (interactive
-   (list (project-read-root "Open project: " recentf-list t)))
+   (list (project-read-root "Open project: " (project-all-recent-files) t)))
   (let ((bufs (project-buffers project)))
     ;; First get all the files we dont have, they will mess up the
     ;; buffer-list ordering
@@ -117,19 +127,21 @@ buffers are ones that have recent commits."
     (mapc 'switch-to-buffer (reverse bufs))))
 
 (defun current-project-root ()
-  (or current-project
-      (let ((path (git--exec-string-no-error "rev-parse" "--show-toplevel")))
-        (when (s-starts-with? "/" path)
-          (setq-local current-project (s-trim path))))))
+  (if (boundp 'current-project)
+      current-project
+    (let ((path (git--exec-string-no-error "rev-parse" "--show-toplevel")))
+      (when (s-starts-with? "/" path)
+        (setq-local current-project (s-trim path))))))
 
 (defun bury-project (root)
   "Bury all the buffers that have default directory in a
 project."
   (interactive (list (project-read-root
                       "Bury project: "
-                      (mapcar (lambda (b)
-                                (with-current-buffer b default-directory))
-                              (buffer-list)))))
+                      (project-all-recent-files
+                       (mapcar (lambda (b)
+                                 (with-current-buffer b default-directory))
+                               (buffer-list))))))
   (dolist (b (buffer-list))
     (when (file-in-directory-p (project-buffer-file-name b) root)
       (with-current-buffer b (bury-buffer))))
@@ -153,9 +165,10 @@ project."
 project."
   (interactive (list (project-read-root
                       "Switch to project: "
-                      (mapcar (lambda (b)
-                                (with-current-buffer b default-directory))
-                              (buffer-list)) t)))
+                      (project-all-recent-files
+                       (mapcar (lambda (b)
+                                 (with-current-buffer b default-directory))
+                               (buffer-list))) t)))
   (dolist (b (reverse (buffer-list)))
     (when (file-in-directory-p (project-buffer-file-name b) root)
       (switch-to-buffer b)))

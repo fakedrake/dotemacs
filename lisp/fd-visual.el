@@ -48,31 +48,33 @@
 
 ;; XXX: Have this be the last thing you do. Apparently things get
 ;; overriden if it is at the beginning of the file.
-(require 'naquadah-theme)
-(if window-system
-    (let ((comment "IndianRed2"))
-      (global-hl-line-mode t)
-      (load-theme 'naquadah t)
-      (custom-theme-set-faces
-       'naquadah
-       `(default ((t (:family "Ubuntu Mono"))))
-       `(mode-line ((t (:height 1.1 :background "gray30"))))
-       `(minibuffer-prompt ((t (:foreground "orange1"))))
-       `(region ((t (:background "gray35"))))
-       `(hl-line ((t (:background "gray25"))))
-       `(ido-only-match ((t (:foreground "dark green" :bold nil))))
-       `(linum ((t (:inherit default :background "#0c191C" :foreground "gray50"))))
+(defun set-theme ()
+  (interactive)
+  (require 'naquadah-theme)
+  (if window-system
+      (let ((comment "IndianRed2"))
+        (global-hl-line-mode t)
+        (load-theme 'naquadah t)
+        (custom-theme-set-faces
+         'naquadah
+         `(default ((t (:family "Ubuntu Mono" :background "#262B2C"))))
+         `(mode-line ((t (:height 1.1 :background "gray30"))))
+         `(minibuffer-prompt ((t (:foreground "orange1"))))
+         `(region ((t (:background "gray35"))))
+         `(hl-line ((t (:background "gray25"))))
+         `(ido-only-match ((t (:foreground "dark green" :bold nil))))
+         `(linum ((t (:inherit default :background "#0c191C" :foreground "gray50"))))
 
-       ;; Development
-       `(font-lock-comment-face ((t (:foreground ,comment))))
-       `(font-lock-function-name-face ((t (:foreground "orange1" :bold t))))
-       `(font-lock-doc-face ((t (:foreground ,comment))))
-       `(font-lock-doc-string-face ((t (:foreground ,comment))))
-       `(link ((t (:foreground  "#729fcf" :underline t))))
+         ;; Development
+         `(font-lock-comment-face ((t (:foreground ,comment))))
+         `(font-lock-function-name-face ((t (:foreground "orange1" :bold t))))
+         `(font-lock-doc-face ((t (:foreground ,comment))))
+         `(font-lock-doc-string-face ((t (:foreground ,comment))))
+         `(link ((t (:foreground  "#729fcf" :underline t))))
 
-       ;; ERC
-       `(erc-prompt-face ((t (:background "#f57900" :bold t :foreground "gray10")))))))
-
+         ;; ERC
+         `(erc-prompt-face ((t (:background "#f57900" :bold t :foreground "gray10"))))))))
+(set-theme)
 
 (defun fd-new-buf-extension (dir &optional default path-len)
   "Return either the last two directories, or default"
@@ -107,6 +109,7 @@
 ;; Put which-func earlier in modeline
 (setq-default mode-line-format
 	      '("%e"
+                (:eval (my-mode-line-vc-info))
 		mode-line-front-space
 		mode-line-mule-info
 		mode-line-client
@@ -115,7 +118,7 @@
 		mode-line-frame-identification
 		mode-line-buffer-identification
 		(which-func-mode
-		 (":" which-func-format " "))
+		 (":" which-funce-format " "))
 		"   "
 		mode-line-position
 		(vc-mode vc-mode)
@@ -125,9 +128,9 @@
 
 (setq-default cursor-type 'box)
 
-
 (add-to-list 'display-buffer-alist
- '("\\*compilation\\*" display-buffer-reuse-window
-   ((reusable-frames . t))))
+             '("\\*compilation\\*" display-buffer-reuse-window
+               ((reusable-frames . t))))
 
+(setq initial-frame-alist nil)
 (provide 'fd-visual)

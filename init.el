@@ -1,3 +1,13 @@
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
+(let ((default-directory "/usr/local/share/emacs/site-lisp/"))
+  (normal-top-level-add-subdirs-to-load-path))
+
 (require 'cl)
 
 (load-file "~/.emacs.d/lisp/fd-perliminaries.el")
@@ -9,7 +19,6 @@
 (require 'fd-misc-programming)
 (require 'fd-automode)
 (require 'fd-javascript)
-(require 'fd-visual)
 (require 'fd-clipboard)
 (require 'fd-ido)
 (require 'fd-yasnippet)
@@ -38,6 +47,9 @@
 (require 'fd-projects)
 (require 'fd-haskell)
 (require 'fd-jstest)
+(require 'fd-image)
+(require 'fd-git)
+(require 'fd-visual)
 
 (setq enable-local-variables :all)
 

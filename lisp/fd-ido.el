@@ -47,4 +47,6 @@ can create a buffer and switch to it or match in a stranger way."
 			(buffer-name buf)))))
 	     (buffer-list)))))
 
+(setq yas-prompt-functions '(yas-ido-prompt))
+
 (provide 'fd-ido)

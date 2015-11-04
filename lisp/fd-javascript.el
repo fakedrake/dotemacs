@@ -1,4 +1,5 @@
 (require 'js2-mode)
+(require 'nodejs-repl)
 
 (defun my-js-newline-and-indent ()
   "Append a newline first if the cursor is between { and }."
@@ -15,6 +16,14 @@
   "Hooks for all clojure."
   (setq js2-basic-offset 2)
   (define-key js2-mode-map (kbd "C-j") 'my-js-newline-and-indent)
+  (define-key js2-mode-map (kbd "C-c C-e") 'nodejs-repl-eval-buffer)
+  (define-key js2-mode-map (kbd "C-M-x") 'nodejs-repl-eval-function)
+  (define-key js2-mode-map (kbd "C-c C-s") 'nodejs-repl-eval-dwim)
+  (define-key js2-mode-map (kbd "C-c C-t") 'js2-toggle-source-test)
+  (define-key js2-mode-map (kbd "C-c s s") 'js2-set-self)
+  (define-key js2-mode-map (kbd "C-c s d") 'js2-set-default)
+  (define-key js2-mode-map (kbd "C-c M-t") 'js2-test-this-file)
+
   (setq-local untabify-on-save t))
 (require 'compile)
 (defvar js-compilation-error-regex-alist
@@ -72,10 +81,6 @@
             (beginning-of-buffer)
             (top-level-functions))))
 
-(defun js2-test-this-file ()
-  (interactive)
-  (compilation-start (format "mocha %s" (buffer-file-name))))
-
 (require 'ffap)
 (defun js2-relative-path (&optional decorate-string)
   "Change the path of the file at point to relative"
@@ -96,5 +101,35 @@
   (js2-relative-path
    (lambda (rel-fname)
      (format "require('%s');" rel-fname))))
+
+(defun js2-beginning-of-outermost-defun ()
+  (interactive)
+  (if (called-interactively-p) (push-mark))
+  (while (js2-mode-function-at-point)
+    (js2-beginning-of-defun)
+    (backward-char))
+  (search-forward "{"))
+
+(defun js2-set-self ()
+  (interactive)
+  (save-excursion
+    (js2-beginning-of-outermost-defun)
+    (my-js-newline-and-indent)
+    (insert "var self = this;")))
+
+(defun js2-set-default ()
+  "Set default value for the selected variable or the variable
+that is the line."
+  (interactive)
+  (let* ((var (if (region-active-p)
+                 (buffer-substring (region-beginning) (region-end))
+               (save-excursion
+                 (buffer-substring
+                  (progn (back-to-indentation) (point))
+                  (progn (end-of-line) (point))))))
+        (before (format " = (typeof %s === 'undefined' ? " var))
+        (after (format " : %s)" var)))
+    (insert before)
+    (save-excursion (insert after))))
 
 (provide 'fd-javascript)
