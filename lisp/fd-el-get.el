@@ -83,7 +83,7 @@
 	markdown-mode
 	ggtags
 	zencoding-mode
-	git-emacs
+	;git-emacs
 	magit
 	bm
 	compilation-setup

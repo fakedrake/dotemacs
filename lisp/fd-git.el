@@ -21,12 +21,13 @@
             (apply-partially 's-starts-with? "git@github.com")
             (s-split "\\s-+" (git--exec-string-no-error "remote" "-v")))
            :test 'equal)))
+(when (boundp 'git-branch-annotator-functions)
+  (defun annotate-issue-names (branch-list)
+    (let ((user (car (github-user-repos))))
+      (when user (branch-issue-alist (car user) (cadr user)))))
 
-(defun annotate-issue-names (branch-list)
-  (let ((user (car (github-user-repos))))
-    (when user (branch-issue-alist (car user) (cadr user)))))
+  (add-to-list 'git-branch-annotator-functions 'annotate-issue-names))
 
-(add-to-list 'git-branch-annotator-functions 'annotate-issue-names)
 (global-magit-file-mode t)
 (define-key magit-file-mode-map (kbd "C-x g") 'magit-file-popup)
 
