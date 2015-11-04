@@ -129,7 +129,8 @@ buffers are ones that have recent commits."
 (defun current-project-root ()
   (if (boundp 'current-project)
       current-project
-    (let ((path (git--exec-string-no-error "rev-parse" "--show-toplevel")))
+    (let ((path (shell-command-to-string
+                 (format "git -C %s rev-parse --show-toplevel" default-directory))))
       (when (s-starts-with? "/" path)
         (setq-local current-project (s-trim path))))))
 
