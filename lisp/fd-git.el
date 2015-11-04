@@ -29,7 +29,8 @@
   (add-to-list 'git-branch-annotator-functions 'annotate-issue-names))
 
 (global-magit-file-mode t)
-(define-key magit-file-mode-map (kbd "C-x g") 'magit-file-popup)
+(define-key magit-file-mode-map (kbd "C-x g g") 'magit-file-popup)
+(define-key magit-file-mode-map (kbd "C-x g s") 'magit-status)
 
 ;; Define faces.
 
