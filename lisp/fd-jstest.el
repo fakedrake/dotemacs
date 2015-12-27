@@ -64,9 +64,9 @@
 (defun js2-toggle-source-test ()
   (interactive)
   (if (string= "js" (file-name-extension (buffer-file-name)))
-    (if (js2-test-file-p (buffer-file-name))
-        (js2-maybe-jump-src)
-      (js2-maybe-jump-test))
+      (if (js2-test-file-p (buffer-file-name))
+          (js2-maybe-jump-src)
+        (js2-maybe-jump-test))
     (error "Not in javascript file.")))
 
 
