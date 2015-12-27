@@ -4,38 +4,7 @@
 
 (which-function-mode t)
 
-(setq own-git-repo-regex-list '("origin[ \t]*git@github.com:fakedrake.*"
-                                "origin[ \t]*git@github.com:codebendercc.*"))
-
-(defun fd-git-remotes ()
-  "Get or set-and-get git remotes. Caching function"
-  (if (boundp 'fd-git-remotes) fd-git-remotes
-    (setq-local fd-git-remotes (git--exec-string "remote" "-v"))))
-
-(defun in-own-git-repo-p ()
-  (some (lambda (x)
-          (string-match
-           x (fd-git-remotes)))
-        own-git-repo-regex-list))
-
-(defun in-git-repo-p ()
-  (null
-   (string-match
-    "fatal: Not a git repository"
-    (fd-git-remotes))))
-
-
-(defun maybe-delete-trailing-whitespace ()
-  "Delete trailing whitespace if you are not in a foreign
-  project."
-  (when (or (in-own-git-repo-p)
-            (not (in-git-repo-p))
-            (and (save-excursion (goto-char (point-min))
-                                 (re-search-forward "\\s-$" nil t))
-                 (y-or-n-p "Foreign git origin. Delete trailing whitespaces? ")))
-    (delete-trailing-whitespace)))
-
-(add-hook 'before-save-hook 'maybe-delete-trailing-whitespace)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (setq require-final-newline 'query)
 (add-hook 'term-mode-hook (lambda() (yas-minor-mode -1))) ;; fix tabcompletion

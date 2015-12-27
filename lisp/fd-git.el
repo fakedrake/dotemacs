@@ -1,5 +1,6 @@
 (require 'gh)
-                                        ; (defvar fd-github-api (gh-issues-api "emacs-stuff"))
+
+                                        ; (setq fd-github-api (gh-issues-api "emacs-stuff"))
 (defvar fd-github-api  nil)
 
 (defmethod gh-issues-issue-list-all ((api gh-issues-api) user repo)
@@ -29,8 +30,8 @@
   (add-to-list 'git-branch-annotator-functions 'annotate-issue-names))
 
 (global-magit-file-mode t)
-(define-key magit-file-mode-map (kbd "C-x g g") 'magit-file-popup)
-(define-key magit-file-mode-map (kbd "C-x g s") 'magit-status)
+(define-key magit-file-mode-map (kbd "C-x g") 'magit-file-popup)
+(define-key magit-file-mode-map (kbd "C-x G") 'magit-status)
 
 ;; Define faces.
 
