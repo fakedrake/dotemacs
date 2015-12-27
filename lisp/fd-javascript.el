@@ -132,4 +132,7 @@ that is the line."
     (insert before)
     (save-excursion (insert after))))
 
+(setq inferior-lisp-program "/usr/local/bin/swank-js")
+(setq slime-contribs '(slime-fancy))
+
 (provide 'fd-javascript)
