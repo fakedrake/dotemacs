@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: Docstring
+# key: ds
+# --
+/**
+* ${1:Main documentation}
+*
+* @param {Array} list of mode.
+*/

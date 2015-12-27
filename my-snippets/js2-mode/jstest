@@ -1,0 +1,11 @@
+# -*- mode: snippet -*-
+# name: Mocha test template
+# --
+var assert = require('assert'),
+    ${1:`(file-name-base (js2-src-file (buffer-file-name)))`} = require('`(file-relative-name (js2-src-file (buffer-file-name)))`');
+
+describe("`(file-name-base)`", function () {
+  before(function () {});
+
+  it("$2", function (done) {$0});
+});

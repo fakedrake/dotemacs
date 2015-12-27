@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: Inherit from parent
+# --
+function ${1:ChildClass} ($2) {
+  ${3:BaseClass}.apply(this, arguments);
+}
+
+$1.prototype = Object.create($3);
+$0

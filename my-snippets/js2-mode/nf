@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: Anonymous function
+# key: f
+# binding: C-c y n f
+# --
+function ${1:foo} ($2) {
+  $0
+}

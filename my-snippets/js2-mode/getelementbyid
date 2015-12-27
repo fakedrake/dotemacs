@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: Get element by id
+# key: gebi
+# --
+document.getElementById("$1")$0

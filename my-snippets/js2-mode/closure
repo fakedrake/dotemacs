@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: (function () {...})()
+# key: closure
+# binding: C-c y l
+# --
+(function () {
+  $0
+})();

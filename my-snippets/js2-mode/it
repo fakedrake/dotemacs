@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: A single test
+# --
+it("$1", function (${2:done}) {
+  $0
+});

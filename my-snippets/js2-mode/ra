@@ -1,0 +1,4 @@
+# -*- mode: snippet -*-
+# name: Require assert
+# --
+assert = require('assert')$0
