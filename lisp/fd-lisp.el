@@ -12,6 +12,7 @@
 (add-hook 'after-save-hook 'byte-compile-current-buffer)
 
 (defun fd-elisp-hooks ()
+  (define-key emacs-lisp-mode-map (kbd "M-.") 'find-function)
   (define-key emacs-lisp-mode-map (kbd "C-M-d") 'edebug-defun))
 
 (add-hook 'emacs-lisp-mode-hook 'fd-elisp-hooks)
