@@ -1,4 +1,4 @@
-s;; ORG mode
+;; ORG mode
 ;; (load-library "org-compat") 		;XXX this is bad but i see no better way.
 
 ;; (load-library "org-list")
@@ -17,9 +17,9 @@ s;; ORG mode
   (define-key org-mode-map "\M-j" 'org-meta-return)
   (define-key org-mode-map "\M-n" 'org-forward-element)
   (define-key org-mode-map "\M-p" 'org-backward-element)
-  (define-key org-mode-map (kbd "S-TAB") nil)
+  (define-key org-mode-map (kbd "<backtab>") nil)
   (setq org-return-follows-link t))
-  ;(add-to-list 'autopair-extra-pairs '(:everywhere ("=" . "="))))
+                                        ;(add-to-list 'autopair-extra-pairs '(:everywhere ("=" . "="))))
 (add-hook 'org-mode-hook 'fd-org-mode-hook)
 
 ;; AutoPairs
@@ -44,15 +44,16 @@ s;; ORG mode
   ;; #+LaTeX_CLASS: fakedrake-org-article
   ;; #+LaTeX_HEADER: <some extra headings>
   (add-to-list 'org-latex-classes
-	       '("fakedrake-org-article"
+	       '("smarticle"
 		 "\\documentclass[11pt,a4paper]{article}
 \\usepackage[T1]{fontenc}
 \\usepackage{fontspec}
 \\usepackage{float}
 \\usepackage{graphicx}
 \\defaultfontfeatures{Mapping=tex-text}
-\\setmainfont{DejaVu Sans}
-\\setmonofont[Scale=0.8]{FreeMono}
+% \\setmainfont{DejaVu Sans}
+\\setmainfont{Arial}
+% \\setmonofont[Scale=0.8]{FreeMono}
 \\usepackage{geometry}
 \\geometry{a4paper, textwidth=6.5in, textheight=10in,
             marginparsep=7pt, marginparwidth=.6in}
@@ -89,5 +90,15 @@ s;; ORG mode
 (org-defkey org-mode-map [(shift down)]        nil)
 (org-defkey org-mode-map [(shift left)]        nil)
 (org-defkey org-mode-map [(shift right)]       nil)
+(org-defkey org-mode-map [(meta shift up)]          'org-shiftup)
+(org-defkey org-mode-map [(meta shift down)]        'org-shiftdown)
+(org-defkey org-mode-map [(meta shift left)]        'org-shiftleft)
+(org-defkey org-mode-map [(meta shift right)]       'org-shiftright)
+
+
+;; Babel
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((shell . t) (python . t) (haskell . t) (js . t)))
 
 (provide 'fd-org)
