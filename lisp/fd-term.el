@@ -98,8 +98,8 @@ non-nil do not ask the user."
       (serial-term "/dev/ttyUSB0" 115200)
     (error "/dev/ttyUSB0 not writeable.")))
 
-(global-set-key (kbd "C-c t") 'ido-term-buffer)
-(global-set-key (kbd "C-c T") 'multi-term) ;; create a new one
+;; (global-set-key (kbd "C-c t") 'ido-term-buffer)
+;; (global-set-key (kbd "C-c T") 'multi-term) ;; create a new one
 
 (add-to-list 'ido-ignore-buffers
 	     (format "\*%s<[0-9]*>\*" multi-term-buffer-name))
