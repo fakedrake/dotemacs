@@ -1,0 +1,7 @@
+(require 'haskell-interactive-mode)
+(require 'haskell-process)
+(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+(add-hook 'haskell-mode-hook 'fd-haskell-mode)
+(defun fd-haskell-mode ()
+  (setq comment-auto-fill-only-comments nil))
+(provide 'fd-haskell)
