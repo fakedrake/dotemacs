@@ -125,7 +125,7 @@ to source."
                        (test-path path))))
     (if (not target-path) (message "Couldn't toggle source for %s" path)
       (find-file target-path)
-      (message "Juped to %s" target-path))))
+      (message "Jumped to %s" target-path))))
 
 (defun py-test-basename-format-fn (dir)
   (set-suffix
