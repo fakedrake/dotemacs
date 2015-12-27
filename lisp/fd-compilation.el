@@ -2,12 +2,13 @@
 ;; Stuff related to compilation.
 (require 's)
 (require 'notifications)
+
 (defun compilation-end-defun (compilation-buffer result)
   (with-current-buffer compilation-buffer
     (if (string= (buffer-name) "*compilation*")
-	(notifications-notify
-	 :title (format "Compilation: %s" result)
-	 :body (format "Cmd: %s" compile-command))
+        (notifications-notify
+         :title (format "Compilation: %s" result)
+         :body (format "Cmd: %s" compile-command))
       (notifications-notify
        :title (format "Finished: %s" (buffer-name))))))
 
@@ -64,26 +65,26 @@
   "Jump to last error."
   (interactive)
   (while (not
-	  (eq (condition-case err
-		  (next-error)
-		(error 'cs-last-error-here))
-	      'cs-last-error-here))))
+          (eq (condition-case err
+                  (next-error)
+                (error 'cs-last-error-here))
+              'cs-last-error-here))))
 
 (defalias 'read-directory-name 'ido-read-directory-name)
 
 (defun fd-compile (command directory)
   (interactive (list
-		(read-shell-command "Compile command: "
-				    compile-command)
-		(read-directory-name "Root directory: "
-				     (or compilation-directory default-directory))))
+                (read-shell-command "Compile command: "
+                                    compile-command)
+                (read-directory-name "Root directory: "
+                                     (or compilation-directory default-directory))))
   (save-excursion
     (let ((default-directory
             (if (s-ends-with-p "/" directory) directory (concat directory "/"))))
       (find-file ".dir-locals.el")
       (save-buffer)
       (add-dir-local-variable nil 'compile-command command)
-      (add-dir-local-variable nil 'compile-root nil)
+      (add-dir-local-variable nil 'compile-root default-directory)
       (save-buffer)
       (bury-buffer)
       (fd-recompile))))
@@ -101,9 +102,9 @@
 this."
   (save-excursion
     (condition-case e
-	(progn
-	  (compilation-next-error (if reverse -1 1) nil (or pt (point)))
-	  (point))
+        (progn
+          (compilation-next-error (if reverse -1 1) nil (or pt (point)))
+          (point))
       ('error nil))))
 
 (defun error-end-of-trace (&optional reverse)
@@ -125,8 +126,8 @@ the top."
   (let ((nep (next-error-point pt reverse)))
     ;; There is an error and it is close.
     (if (and nep (<= (count-lines pt nep)
-		     error-trace-max-distance))
-	(internal-end-of-trace nep reverse)
+                     error-trace-max-distance))
+        (internal-end-of-trace nep reverse)
       pt)))
 
 
