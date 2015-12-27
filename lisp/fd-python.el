@@ -26,9 +26,11 @@
 (setq jedi:setup-keys t)
 (setq jedi:complete-on-dot t)
 (setq-default python-shell-virtualenv-path "~/bin/py")
+(setq-default python-shell-virtualenv-root "~/bin/py")
 
 (defun fd-venv-path (path)
   (interactive (list (ido-read-directory-name "Virtualenv root: ")))
+  (add-dir-local-variable 'python-mode 'python-shell-virtualenv-root path)
   (add-dir-local-variable 'python-mode 'python-shell-virtualenv-path path))
 
 (defun fd-python-project-root (&optional path)
@@ -211,6 +213,8 @@ is nil check if path in any project."
   (define-key python-mode-map (kbd "C-c C-t")
     'fd-python-jump-between-test-and-implementation)
   (define-key python-mode-map (kbd "C-c M-t") 'fd-python-run-tests)
+  (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
+  (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
   (local-unset-key (kbd "<backtab>")))
 
 (add-hook 'python-mode-hook 'fd-python-hook)
