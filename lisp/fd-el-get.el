@@ -61,14 +61,16 @@
 	js2-mode
 	coffee-mode
         ;; flymake-coffee-load
-        ;; slime
-	;; swank-js
+        slime
+	swank-js
+        flymake-jslint
 	json-mode
 	graphviz-dot-mode
 	cider
 	; ac-nrepl
 	clojure-mode
         nodejs-repl
+        js-doc
 	;; cscope
 	cmake-mode
 	multi-term
@@ -80,6 +82,8 @@
 	;; hide-region
 	gist
 	org-mode
+        org-trello
+        cdlatex-mode
 	markdown-mode
 	ggtags
 	zencoding-mode
@@ -190,6 +194,17 @@
           :depends (f let-alist s)
 	  :type github
 	  :pkgname "jcollard/elm-mode")
+
+   (:name flymake-jslint
+	  :description "Emacs flymake syntax-checker for javascript using jslint."
+          :depends (flymake-easy)
+	  :type github
+	  :pkgname "purcell/flymake-jslint")
+
+   (:name jslint
+	  :description "Linter for javascript."
+	  :type npm
+	  :pkgname "jslint")
 
    (:name js-beautify
 	  :description "Beautify on node"
