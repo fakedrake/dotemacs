@@ -2,4 +2,4 @@
 # name: Prototype of function
 # key: prot
 # --
-${1:`(save-excursion (re-search-backward "function *\\([a-zA-Z0-9_]*\\) ?") (match-string 1))`}.prototype = {$0};
+${1:`(condition-case nil (save-excursion (re-search-backward "function *\\([a-zA-Z0-9_]*\\) ?") (match-string 1)) (error "ObjectName"))`}.prototype = {$0};

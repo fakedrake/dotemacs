@@ -1,0 +1,6 @@
+# name: Include std libs
+# key: <s
+# --
+#+BEGIN_SRC ${1:`(condition-case nil (save-excursion (re-search-backward "function *\\([a-zA-Z0-9_]*\\) ?") (match-string 1)) (error "lang"))`}
+$0
+#+END_SRC
