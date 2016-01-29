@@ -26,7 +26,7 @@
 (require 'fd-python)
 (require 'fd-undotree)
 (require 'fd-recentfiles)
-(require 'fd-erc)
+; (require 'fd-erc)
 ;; (require 'fd-desktop)
 (require 'fd-bookmarks)
 (require 'fd-tags)
@@ -49,6 +49,7 @@
 (require 'fd-jstest)
 (require 'fd-image)
 (require 'fd-git)
+(require 'fd-eshell)
 (require 'fd-visual)
 
 (setq enable-local-variables :all)
