@@ -1,6 +1,6 @@
 # -*- mode: snippet -*-
-# name: console.{log,error,trace,warn}(...);
-# key: c
+# name: console.log(...);
+# key: cl
 # binding: C-c y c
 # --
-console.${1:log}($0);
+console.log($0);

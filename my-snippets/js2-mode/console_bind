@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: console.log.bind(console);
+# key: clb
+# --
+console.log.bind(console$0)
