@@ -1,0 +1,7 @@
+# name: unofficial strict mode
+# key: strict
+# author: Chris Perivolaropoulos
+# --
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
