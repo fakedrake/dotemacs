@@ -2,16 +2,9 @@
 # key: pelican
 # author: Chris Perivolaropoulos
 # --
-title: `(let ((title (split-string (file-name-base) "-"))) (mapconcat 'identity (cons (capitalize (car title)) (cdr title)) " "))`
-date: `(format-time-string "%Y-%m-%d %R")`
+title: `(fd-yas:slug-to-title)`
+date: `(fd-yas:today)`
 tags:
 category:
 slug: `(file-name-base)`
 author: Chris Perivolaropoulos
-status: draft
-summary:
-
-_This article is hidden. Remove status: hidden or make it status:
-published to be able to publish_
-
-$0

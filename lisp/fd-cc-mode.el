@@ -31,7 +31,19 @@ at least one .cpp file in the same directory."
 (defun fakedrake-cc-mode-init ()
   "Just some initializations I need for C"
   (c++-to-headers-mode)
-
+  (mapc
+   (function
+    (lambda (sym)
+      (put sym 'delete-selection nil)	; for delsel (Emacs)
+      (put sym 'pending-delete nil)))	; for pending-del (XEmacs)
+   '(c-electric-pound
+     c-electric-brace
+     c-electric-slash
+     c-electric-star
+     c-electric-semi&comma
+     c-electric-lt-gt
+     c-electric-colon
+     c-electric-paren))
   (define-key c-mode-base-map (kbd "C-M-n") 'c-end-of-defun)
   (define-key c-mode-base-map (kbd "C-M-p") 'c-beginning-of-defun)
   (define-key c-mode-base-map (kbd "M-n") 'c-end-of-statement)

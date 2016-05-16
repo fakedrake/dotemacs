@@ -11,6 +11,7 @@ keep, defaults to 1."
 (add-to-list 'yas-snippet-dirs (my-expand-path "my-snippets/"))
 (yas-global-mode 1)
 
+(define-key yas-minor-mode-map (kbd "C-c y n") 'yas-new-snippet)
 (define-key yas-minor-mode-map (kbd "C-h y") 'yas-describe-tables)
 (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand) ; S-Tab
 (define-key yas-minor-mode-map [(tab)] nil)
@@ -87,5 +88,31 @@ sphinx describing the arguments."
   (car (last-syms-before regex)))
 
 (setq yas-wrap-around-region t)
+
+(defun fd-yas:slug-to-title ()
+  (let ((title (split-string (file-name-base) "-")))
+    (mapconcat 'identity (cons (capitalize (car title)) (cdr title)) " ")))
+
+(defun fd-yas:today ()
+  (format-time-string "%Y-%m-%d %R"))
+
+(defun yas--save-backquotes ()
+  "Save all the \"`(lisp-expression)`\"-style expressions
+with their evaluated value into `yas--backquote-markers-and-strings'."
+  (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
+    (let ((current-string (match-string-no-properties 1)) transformed)
+      (save-match-data                  ;XXX: here is my addition
+        (save-restriction (widen)
+                          (delete-region (match-beginning 0) (match-end 0))))
+      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
+      (goto-char (match-beginning 0))
+      (when transformed
+        (let ((marker (make-marker)))
+          (save-restriction
+            (widen)
+            (insert "Y") ;; quite horrendous, I love it :)
+            (set-marker marker (point))
+            (insert "Y"))
+          (push (cons marker transformed) yas--backquote-markers-and-strings))))))
 
 (provide 'fd-yasnippet)

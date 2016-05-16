@@ -73,21 +73,48 @@
 (defalias 'read-directory-name 'ido-read-directory-name)
 
 (defun fd-compile (command directory)
+  "Save the compilation to either the closest .dir-locals.el or
+the current directory. Then run compilation."
   (interactive (list
                 (read-shell-command "Compile command: "
                                     compile-command)
                 (read-directory-name "Root directory: "
                                      (or compilation-directory default-directory))))
   (save-excursion
-    (let ((default-directory
-            (if (s-ends-with-p "/" directory) directory (concat directory "/"))))
-      (find-file ".dir-locals.el")
-      (save-buffer)
-      (add-dir-local-variable nil 'compile-command command)
-      (add-dir-local-variable nil 'compile-root default-directory)
-      (save-buffer)
-      (bury-buffer)
+    (fd-save-compilation
+     (or (fd-project-root default-directory ".dir-locals.el") default-directory)
+     directory command)
+    (let ((default-directory (fd-normalize-dir directory)))
       (fd-recompile))))
+
+(defun fd-normalize-dir (directory)
+  (if (s-ends-with-p "/" directory) directory (concat directory "/")))
+
+(defun fd-trim (c str)
+  (apply 'string
+         (nreverse
+          (fd-trim-internal
+           c (nreverse
+              (fd-trim-internal
+               c (string-to-list str)))))))
+
+(defun fd-trim-internal (c lst)
+  (if (and lst (= (car lst) c)) (fd-trim-internal c (cdr lst)) lst))
+
+(defun fd-path-concat (&rest path-fragments)
+  (concat "/"
+          (fd-trim ?/
+                   (mapconcat
+                    (apply-partially 'fd-trim ?/)
+                    path-fragments "/"))))
+
+(defun fd-save-compilation (project-root compilation-root command)
+  (find-file (fd-path-concat project-root ".dir-locals.el"))
+  (save-buffer)
+  (add-dir-local-variable nil 'compile-command command)
+  (add-dir-local-variable nil 'compile-root compilation-root)
+  (save-buffer)
+  (bury-buffer))
 
 (global-set-key (kbd "C-c r") 'fd-recompile)
 (global-set-key (kbd "C-c c c") 'fd-compile)
@@ -163,5 +190,8 @@ the top."
   (defun my-colorize-compilation-buffer ()
     (ansi-color-apply-on-region compilation-filter-start (point-max)))
   (add-hook 'compilation-filter-hook 'my-colorize-compilation-buffer))
+
+(defun fd-next-error-hook ()
+  (message "Next!"))
 
 (provide 'fd-compilation)

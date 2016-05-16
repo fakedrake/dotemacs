@@ -4,21 +4,22 @@
 
 (which-function-mode t)
 
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook 'maybe-delete-whitespace)
+
+(defvar keep-whitespace nil
+  "Don't delete trailing whitespaces in a file.")
+(defun maybe-delete-whitespace ()
+  "if `keep-whitespace' is non-nil delete trailing whitespaces on
+each line."
+  (interactive)
+  (if keep-whitespace
+      (message "Unset `keep-whitespace' to remove trailing whitespace on save")
+    (delete-trailing-whitespace)))
 
 (setq require-final-newline 'query)
 (add-hook 'term-mode-hook (lambda() (yas-minor-mode -1))) ;; fix tabcompletion
 
-(require 'autopair)
-(autopair-global-mode) ;; enable autopair in all buffers
-
-
-(add-hook 'term-mode-hook
-          #'(lambda ()
-              (setq autopair-dont-activate t) ;; for emacsen < 24
-              (autopair-mode -1))             ;; for emacsen >= 24
-          )
-
+(electric-pair-mode)
 ;; Indent buffer
 (defun indent-buffer ()
   "Indents an entire buffer using the default intenting scheme."
@@ -136,6 +137,11 @@ function created this way."
                       (funcall act btn)
                       (when (not (string= (buffer-name) "*git-commit*"))
                         (previous-window))))))))
+
+(require 'whitespace)
+(setq whitespace-style '(face lines-tail))
+(setq whitespace-line-column 80)
+(global-whitespace-mode t)
 
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
 (provide 'fd-misc-programming)

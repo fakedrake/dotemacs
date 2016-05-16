@@ -166,6 +166,7 @@ parent."
 	  (lambda ()
 	    (define-key dired-mode-map (kbd "/")
 	      'dired-isearch-filenames)))
+(setq dired-dwim-target t)
 
 (add-hook 'text-mode
 	  (lambda ()
@@ -337,6 +338,9 @@ ignore buffers with."
     (setenv "EMACS" (s-trim (shell-command-to-string "echo $EMACS")))
     (setq exec-path (split-string path-from-shell path-separator))))
 
+;; (set-language-environment "UTF-8")
+;; (set-default-coding-systems 'utf-8)
+(global-prettify-symbols-mode 1)
 (set-exec-path-from-shell-PATH)
 (global-unset-key (kbd "M-`"))
 
@@ -344,5 +348,7 @@ ignore buffers with."
 (setq windmove-wrap-around t)
 
 (global-set-key (kbd "M-q") 'fill-paragraph)
+(global-set-key (kbd "C-h a") 'apropos)
+(global-set-key (kbd "M-v") (lambda () (interactive) (message "Use C-y to paste")))
 
 (provide 'fd-misc)

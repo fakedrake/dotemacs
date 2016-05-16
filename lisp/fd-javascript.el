@@ -135,4 +135,8 @@ that is the line."
 (setq inferior-lisp-program "/usr/local/bin/swank-js")
 (setq slime-contribs '(slime-fancy))
 
+;; Variable names
+(delete-if (lambda (c) (member c '("self" "Event"))) js2-browser-externs)
+(setq js2-browser-externs (append js2-browser-externs '("require" "global")))
+
 (provide 'fd-javascript)

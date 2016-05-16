@@ -14,25 +14,29 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
+        google-translate
+        dired-hacks
+        notmuch
 	queue
 	s
 	pkg-info
 	request
 
-        ; flycheck
+        ;; flycheck
 	;; ;; Elisp hepers
-	;; f
+	f
 
 	;; Python
 	python
 	; django-mode ; snippets get fucked up
 	jedi
-	ein
+	;; ein
 
 	;; Auto Complete packages
 	yasnippet
         ; auto-yasnippet
-	auto-complete
+	; auto-complete
+        company-mode
 
 	;; themes I like
 	naquadah-theme
@@ -49,7 +53,7 @@
 	; erc-image
 
 	;; Misc
-	;;	slime
+        ;; slime
 	;; helm
 	;; nxhtml ; this is obsolete crap, stay away.
 	;; realgud ; Can't install test-simple
@@ -57,12 +61,10 @@
 	lua-mode
 	textile-mode
 	haskell-mode
-        elm-mode
+        ;; elm-mode
 	js2-mode
 	coffee-mode
         ;; flymake-coffee-load
-        slime
-	swank-js
         flymake-jslint
 	json-mode
 	graphviz-dot-mode
@@ -75,7 +77,6 @@
 	cmake-mode
 	multi-term
 	yaml-mode
-	autopair
 	vimperator-mode
 	c-eldoc
 	;; sort
@@ -92,7 +93,9 @@
 	bm
 	compilation-setup
         google-c-style
-        web-mode))
+        web-mode
+        dtrace-script-mode
+        ProofGeneral))
 
 (setq
  el-get-sources
@@ -201,6 +204,11 @@
 	  :type github
 	  :pkgname "purcell/flymake-jslint")
 
+   (:name dtrace-script-mode
+	  :description "DTrace script mode for Emacs "
+	  :type github
+	  :pkgname "dotemacs/dtrace-script-mode")
+
    (:name jslint
 	  :description "Linter for javascript."
 	  :type npm
@@ -216,14 +224,37 @@
    ;;        :description "Image previews in erc."
    ;;        :type github
    ;;        :pkgname "kidd/erc-image.el")
-   (:name ein
-       :description "IPython notebook client in Emacs"
-       :type github
-       :pkgname "millejoh/emacs-ipython-notebook"
-       :depends (websocket request auto-complete)
-       :load-path ("lisp")
-       :submodule nil
-       :features ein)))
+   ;; (:name ein
+   ;;     :description "IPython notebook client in Emacs"
+   ;;     :type github
+   ;;     :pkgname "millejoh/emacs-ipython-notebook"
+   ;;     :depends (websocket request auto-complete)
+   ;;     :load-path ("lisp")
+   ;;     :submodule nil
+   ;;     :features ein)
+
+   (:name notmuch
+          :description "Run notmuch(thread-based email index, search and tagging) within emacs"
+          :type git
+          :depends (company-mode)
+          :url "git://notmuchmail.org/git/notmuch"
+          :load-path ("./emacs"))
+
+ (:name nevermore
+        :description "Notmuch based mail client"
+        :type github
+        :depends (company-mode notmuch)
+        :pkgname "tjim/nevermore")
+ (:name gazelle
+        :description "Lisp to js"
+        :type github
+        :depends (shadchen-el)
+        :pkgname "VincentToups/gazelle")
+ (:name shadchen-el
+        :description "Pattern matching for j"
+        :type github
+        :pkgname "VincentToups/shadchen-el")
+ ))
 
 
 (when (el-get-executable-find "svn")

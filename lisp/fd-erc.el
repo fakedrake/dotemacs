@@ -89,21 +89,21 @@ removed from the list will be disabled."
 ;; make sure to use wildcards for e.g. freenode as the actual server
 ;; name can be be a bit different, which would screw up autoconnect
 (erc-autojoin-mode t)
-(setq erc-use-znc-astaroth t)
+(setq erc-use-znc-marxistutopia t)
 
 (defun fakedrake-erc-start-or-switch ()
   "Connect to ERC, or switch to last active buffer"
   (interactive)
   ;; (select-frame (make-frame '((name . "Emacs IRC")
   ;; 			      (minibuffer . t))))
-  (setq erc-autojoin-channels-alist
-	'((".*\\.freenode.net" "#node.js")
-	  (".*\\.freenode.net" "#p-space")
-	  (".*\\.freenode.net" "#codebender.cc")))
+  ;; (setq erc-autojoin-channels-alist
+  ;;       '((".*\\.freenode.net" "#node.js")
+  ;;         (".*\\.freenode.net" "#p-space")
+  ;;         (".*\\.freenode.net" "#codebender.cc")))
   (if (get-erc-buffer (buffer-list)) ;; ERC already active?
       (fd-digup-erc)
-    (if erc-use-znc-astaroth
-	(erc :server "astaroth"
+    (if erc-use-znc-marxistutopia
+	(erc :server "marxistutopia"
 	     :port 5000
 	     :nick my-znc-nick
 	     :password (format "%s:%s" my-znc-nick my-znc-password))

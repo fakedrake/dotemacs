@@ -6,7 +6,9 @@
 
 (defun paste-to-osx (text &optional push)
   (let ((process-connection-type nil)
+        (lang (getenv "LANG"))
         (default-directory "~"))
+    (setenv "LANG" "en_US.UTF-8")
     (let ((proc (start-process "pbcopy" "*Messages*" "pbcopy")))
       (process-send-string proc text)
       (process-send-eof proc))))

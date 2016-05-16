@@ -1,4 +1,3 @@
-
 ;; Added by Package.el.  This must come before configurations of
 ;; installed packages.  Don't delete this line.  If you don't want it,
 ;; just comment it out by adding a semicolon to the start of the line.
@@ -22,11 +21,11 @@
 (require 'fd-clipboard)
 (require 'fd-ido)
 (require 'fd-yasnippet)
-(require 'fd-autocomplete)
+; (require 'fd-autocomplete)
 (require 'fd-python)
 (require 'fd-undotree)
 (require 'fd-recentfiles)
-; (require 'fd-erc)
+(require 'fd-erc)
 ;; (require 'fd-desktop)
 (require 'fd-bookmarks)
 (require 'fd-tags)
@@ -51,6 +50,9 @@
 (require 'fd-git)
 (require 'fd-eshell)
 (require 'fd-visual)
+(require 'fd-coq)
+(require 'fd-notmuch)
+(require 'fd-company)
 
 (setq enable-local-variables :all)
 
@@ -63,8 +65,17 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(safe-local-variable-values (quote ((compile-root))))
- '(send-mail-function (quote smtpmail-send-it)))
+ '(org-agenda-files nil)
+ '(safe-local-variable-values
+   (quote
+    ((haskell-process-log t)
+     (haskell-process-args-ghci "repl")
+     (haskell-process-path-ghci "cabal")
+     (compile-root . "/Users/drninjabatman/Projects/Codebendercc/BFSuite/")
+     (compile-root))))
+ '(send-mail-function (quote smtpmail-send-it))
+ '(smtpmail-smtp-server "smtp.gmail.com")
+ '(smtpmail-smtp-service 25))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
