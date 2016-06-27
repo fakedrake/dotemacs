@@ -1,4 +1,4 @@
 # -*- mode: snippet -*-
 # name: Method for an object
 # --
-`(save-excursion (re-search-backward "function *\\([a-zA-Z0-9_]+\\) ?(") (match-string 1))`.prototype.${1:methodName} = function ($2) {$0};
+`(save-excursion (re-search-backward "^function *\\([a-zA-Z0-9_]+\\) ?(") (match-string 1))`.prototype.${1:methodName} = function ($2) {$0};

@@ -351,4 +351,8 @@ ignore buffers with."
 (global-set-key (kbd "C-h a") 'apropos)
 (global-set-key (kbd "M-v") (lambda () (interactive) (message "Use C-y to paste")))
 
+(require 'grep)
+(add-to-list 'grep-find-ignored-directories ".cabal-sandbox")
+(add-to-list 'grep-find-ignored-directories "node_modules")
+
 (provide 'fd-misc)

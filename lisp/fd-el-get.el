@@ -21,6 +21,8 @@
 	s
 	pkg-info
 	request
+        auctex
+        idris-mode
 
         ;; flycheck
 	;; ;; Elisp hepers
@@ -95,7 +97,8 @@
         google-c-style
         web-mode
         dtrace-script-mode
-        ProofGeneral))
+        ; proof-general
+        ))		     
 
 (setq
  el-get-sources

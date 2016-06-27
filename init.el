@@ -50,9 +50,10 @@
 (require 'fd-git)
 (require 'fd-eshell)
 (require 'fd-visual)
-(require 'fd-coq)
+; (require 'fd-coq)
 (require 'fd-notmuch)
 (require 'fd-company)
+(require 'fd-aspell)
 
 (setq enable-local-variables :all)
 
@@ -68,7 +69,8 @@
  '(org-agenda-files nil)
  '(safe-local-variable-values
    (quote
-    ((haskell-process-log t)
+    ((compile-root . "/Users/drninjabatman/bin/")
+     (haskell-process-log t)
      (haskell-process-args-ghci "repl")
      (haskell-process-path-ghci "cabal")
      (compile-root . "/Users/drninjabatman/Projects/Codebendercc/BFSuite/")
@@ -82,3 +84,4 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(put 'narrow-to-page 'disabled nil)

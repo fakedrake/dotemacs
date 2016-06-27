@@ -5,10 +5,10 @@
 	       (nnimap-stream ssl)))
 
 (setq message-send-mail-function 'smtpmail-send-it
-      smtpmail-starttls-credentials '(("smtp.gmail.com" 587 nil nil))
-      smtpmail-auth-credentials '(("smtp.gmail.com" 587
-				   "darksaga2006@gmail.com" nil))
-      smtpmail-default-smtp-server "smtp.gmail.com"
-      smtpmail-smtp-server "smtp.gmail.com"
+      smtpmail-starttls-credentials '(("outgoing.csail.mit.edu" 587 nil nil))
+      smtpmail-auth-credentials '(("outgoing.csail.mit.edu" 587
+				   "cperivol@csail.mit.edu" nil))
+      smtpmail-default-smtp-server "outgoing.csail.mit.edu"
+      smtpmail-smtp-server "outgoing.csail.mit.edu"
       smtpmail-smtp-service 587
       gnus-ignored-newsgroups "^to\\.\\|^[0-9. ]+\\( \\|$\\)\\|^[\"]\"[#'()]")

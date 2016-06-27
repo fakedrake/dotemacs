@@ -19,7 +19,7 @@
      (modify-syntax-entry ?+ "\"" table)
      (modify-syntax-entry ?/ "\"" table)
      table))
-  (define-key org-mode-map "\C-c r" 'google-translate-at-point-reverse)
+  (define-key org-mode-map (kbd "C-c r") 'google-translate-at-point-reverse)
   (define-key org-mode-map "\M-j" 'org-meta-return)
   (define-key org-mode-map "\M-n" 'org-forward-element)
   (define-key org-mode-map "\M-p" 'org-backward-element)
@@ -134,7 +134,7 @@
   (save-excursion
     (goto-char (point-min))
     (while (and (or
-                 (looking-at "[ \t]*#+")
+                 (looking-at "[ \t]*#\\+")
                  (looking-at "[ \t]*$"))
                 (progn (next-line) (< (point) (point-max))))
       (beginning-of-line))
@@ -317,5 +317,13 @@ from ignoring export options at the beginning of the file."
          ((tags-todo "WORK")))
         ("p" "Agenda and tasks, personal"
          ((tags-todo "-WORK")))))
+
+(setq org-capture-templates
+  '(("b"
+     "Capture current bibtex entry."
+     entry
+     '(file "~/.agenda/bibtex.org")
+     "* References %?\n\n%a\n\n%:author (%:year): %:title\n   \
+         In %:journal, %:pages.")))
 
 (provide 'fd-org)
