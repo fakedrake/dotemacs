@@ -40,4 +40,40 @@
   (call-interactively 'notmuch)
   (notmuch-poll-and-refresh-this-buffer))
 
+
+(defun fd-notmuch-show-hook ()
+  (define-key notmuch-show-mode-map (kbd "RET") 'browse-url))
+(add-hook 'notmuch-show-hook 'fd-notmuch-show-hook)
+
+(defvar fd-notmuch-mail-name-alist '(("cperivol@csail.mit.edu" . "Me")))
+(defun mapping-notmuch-clean-address (orig-fn &rest args)
+  "Use `fd-notmuch-mail-name-alist' to change names for specific
+mail addresses. This function is not used in `notmuch-searh'
+buffers. Instead `notmuch-insert-authors' is used."
+  (let* ((res (apply orig-fn args))
+         (new-name (assoc (car res) fd-notmuch-mail-name-alist)))
+    (if new-name (cons (car res) (cdr new-name)) res)))
+
+(defvar fd-notmuch-author-alias-alist '(("Chris Perivolaropoulos" . "Me")))
+(defun alias-authors (authors &optional res)
+  "Replace the authors in the list with their alias according to
+`fd-notmuch-author-alias-alist'"
+  (if (not authors) res
+    (cons
+     (let ((alias-cons (assoc (car authors) fd-notmuch-author-alias-alist)))
+       (if alias-cons (cdr alias-cons) (car authors)))
+     (alias-authors (cdr authors)))))
+
+(defun alias-authors-str (authors)
+  "Hardcoded replacements for authors."
+  (replace-regexp-in-string "Chris Perivolaropoulos" "Me" authors))
+
+(defun alias-authors-notmuch-insert-authors (orig-fn format-string authors)
+  "Use the `alias-authors-str' function to override the authors
+string."
+  (apply orig-fn format-string (alias-authors-str authors) nil))
+
+(advice-add 'notmuch-search-insert-authors :around #'alias-authors-notmuch-insert-authors)
+(advice-add 'notmuch-clean-address :around #'mapping-notmuch-clean-address)
+
 (provide 'fd-notmuch)
