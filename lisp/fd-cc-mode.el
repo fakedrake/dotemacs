@@ -30,6 +30,7 @@ at least one .cpp file in the same directory."
 
 (defun fakedrake-cc-mode-init ()
   "Just some initializations I need for C"
+  (rainbow-delimiters-mode)
   (c++-to-headers-mode)
   (mapc
    (function

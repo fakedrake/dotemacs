@@ -14,6 +14,7 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
+        rainbow-delimiters
         google-translate
         dired-hacks
         notmuch
@@ -97,8 +98,7 @@
         google-c-style
         web-mode
         dtrace-script-mode
-        ; proof-general
-        ))		     
+        proof-general))
 
 (setq
  el-get-sources

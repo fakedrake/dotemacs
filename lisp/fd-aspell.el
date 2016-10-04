@@ -55,6 +55,13 @@
          (emphasized (emphasized-word word (take 3 (caddr corrections)))))
     (when emphasized
       (replace-region start end emphasized))))
+
 (add-to-list 'flyspell-incorrect-hook 'maybe-set-greek-prime)
+
+(defun greek-flyspell-dictionary ()
+  (interactive)
+  (flyspell-mode 1)
+  (ispell-change-dictionary "greek")
+  (flyspell-buffer))
 
 (provide 'fd-aspell)

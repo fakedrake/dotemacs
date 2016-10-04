@@ -4,7 +4,7 @@
 (add-hook 'haskell-mode-hook 'fd-haskell-mode)
 (setq haskell-process-type 'auto)
 (setq haskell-process-path-ghci "cabal")
-(setq haskell-process-args-ghci "repl")
+(setq haskell-process-args-ghci '("repl"))
 
 (defun fd-haskell-mode ()
   (setq comment-auto-fill-only-comments nil))
@@ -21,4 +21,5 @@
       (write-region (region-beginning) (region-end) tmp)
       (haskell-process-file-loadish cmd nil buf)
       (delete-file tmp))))
+
 (provide 'fd-haskell)

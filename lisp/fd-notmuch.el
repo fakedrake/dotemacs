@@ -76,4 +76,6 @@ string."
 (advice-add 'notmuch-search-insert-authors :around #'alias-authors-notmuch-insert-authors)
 (advice-add 'notmuch-clean-address :around #'mapping-notmuch-clean-address)
 
+;; For smtp errors try using the csail server defined in fd-mail.el
+
 (provide 'fd-notmuch)

@@ -15,6 +15,7 @@
 (defun fd-js-mode-hook ()
   "Hooks for all clojure."
   (setq js2-basic-offset 2)
+  (rainbow-delimiters-mode 1)
   (define-key js2-mode-map (kbd "C-j") 'my-js-newline-and-indent)
   (define-key js2-mode-map (kbd "C-c C-e") 'nodejs-repl-eval-buffer)
   (define-key js2-mode-map (kbd "C-M-x") 'nodejs-repl-eval-function)

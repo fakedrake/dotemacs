@@ -128,7 +128,8 @@
 ;; Babel
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((shell . t) (python . t) (latex . t) (haskell . t) (js . t)))
+ '((shell . t) (python . t) (latex . t) (haskell . t) (js . t) (dot . t)))
+(add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))
 
 (defun fd--org-doc-begin ()
   (save-excursion
