@@ -10,7 +10,10 @@
 (require 'cl)
 
 (load-file "~/.emacs.d/lisp/fd-perliminaries.el")
-(require 'fd-personal)
+
+(if (not (file-exists-p "lisp/fd-personal.el"))
+    (error "Make lisp/fd-personal.el or we will be missig: my-znc-nick, my-znc-password, my-znc-fullname")
+  (require 'fd-personal))
 (when (eq system-type 'darwin) ;; mac specific settings
   (require 'fd-macosx))
 (require 'fd-el-get)
@@ -52,8 +55,10 @@
 (require 'fd-visual)
 ; (require 'fd-coq)
 (require 'fd-notmuch)
+(require 'fd-mail)
 (require 'fd-company)
 (require 'fd-aspell)
+(require 'fd-idris)
 
 (setq enable-local-variables :all)
 
@@ -61,23 +66,6 @@
 (put 'downcase-region 'disabled nil)
 
 (message "Welcome to emacs!")
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-agenda-files nil)
- '(safe-local-variable-values
-   (quote
-    ((compile-root . "/Users/drninjabatman/bin/")
-     (haskell-process-log t)
-     (haskell-process-args-ghci "repl")
-     (haskell-process-path-ghci "cabal")
-     (compile-root . "/Users/drninjabatman/Projects/Codebendercc/BFSuite/")
-     (compile-root))))
- '(send-mail-function (quote smtpmail-send-it))
- '(smtpmail-smtp-server "smtp.gmail.com")
- '(smtpmail-smtp-service 25))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -85,3 +73,6 @@
  ;; If there is more than one, they won't work right.
  )
 (put 'narrow-to-page 'disabled nil)
+
+(load-file (let ((coding-system-for-read 'utf-8))
+                (shell-command-to-string "agda-mode locate")))
