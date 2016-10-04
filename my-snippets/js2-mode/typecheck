@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: Typecheck arguments
+# key: tc
+# --
+typecheck(arguments, [$0]);
