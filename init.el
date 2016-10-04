@@ -11,7 +11,7 @@
 
 (load-file "~/.emacs.d/lisp/fd-perliminaries.el")
 
-(if (not (file-exists-p "lisp/fd-personal.el"))
+(if (not (file-exists-p "~/.emacs.d/lisp/fd-personal.el"))
     (error "Make lisp/fd-personal.el or we will be missig: my-znc-nick, my-znc-password, my-znc-fullname")
   (require 'fd-personal))
 (when (eq system-type 'darwin) ;; mac specific settings
