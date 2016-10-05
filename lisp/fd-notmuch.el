@@ -45,6 +45,7 @@
   (define-key notmuch-show-mode-map (kbd "RET") 'browse-url))
 (add-hook 'notmuch-show-hook 'fd-notmuch-show-hook)
 
+;;; Change all occurances of my email and name with "Me"
 (defvar fd-notmuch-mail-name-alist '(("cperivol@csail.mit.edu" . "Me")))
 (defun mapping-notmuch-clean-address (orig-fn &rest args)
   "Use `fd-notmuch-mail-name-alist' to change names for specific
@@ -75,6 +76,9 @@ string."
 
 (advice-add 'notmuch-search-insert-authors :around #'alias-authors-notmuch-insert-authors)
 (advice-add 'notmuch-clean-address :around #'mapping-notmuch-clean-address)
+
+;;; Make sure emails are visible.
+(setq shr-color-visible-luminance-min 70)
 
 ;; For smtp errors try using the csail server defined in fd-mail.el
 
