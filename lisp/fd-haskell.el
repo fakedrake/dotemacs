@@ -7,7 +7,8 @@
 (setq haskell-process-args-ghci '("repl"))
 
 (defun fd-haskell-mode ()
-  (setq comment-auto-fill-only-comments nil))
+  (setq comment-auto-fill-only-comments nil)
+  (setq haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall")))
 
 (defun fd-haskell-load-region ()
   (interactive)

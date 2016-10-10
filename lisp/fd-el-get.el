@@ -18,11 +18,12 @@
         google-translate
         dired-hacks
         notmuch
-	queue
 	s
+        popup
 	pkg-info
 	request
         auctex
+        prop-menu
         idris-mode
 
         ;; flycheck
