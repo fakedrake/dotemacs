@@ -14,6 +14,7 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
+        dictionary
         rainbow-delimiters
         google-translate
         dired-hacks
