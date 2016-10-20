@@ -7,6 +7,7 @@
 (setq haskell-process-args-ghci '("repl"))
 
 (defun fd-haskell-mode ()
+  (define-key 'haskell-mode-map (kbd "C-c C-t") 'haskell-toggle-src-test)
   (setq comment-auto-fill-only-comments nil)
   (setq haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall")))
 
@@ -41,5 +42,46 @@
     (if ael (setf (cdr ael) (cdr el))
       (add-to-list 'compilation-error-regexp-alist-alist el))))
 
+(defun haskell-jump-src-to-test ()
+  (interactive)
+  (let ((cabal-file (haskell-cabal-find-file)))
+    (if (not cabal-file) (error "Not in haskell project.")
+    (let ((test-fname (concat (file-name-directory cabal-file)
+                              "tests/"
+                              (file-name-nondirectory (buffer-file-name)))))
+      (find-file test-fname)))))
+
+(defun haskell-test-to-src ()
+  (let ((cabal-file (haskell-cabal-find-file))
+        (testname (file-name-base (buffer-file-name))))
+    (if (or (not cabal-file)) (error "Not in haskell project.")
+      (with-current-buffer (find-file-noselect cabal-file)
+        (let* ((src-dirs (haskell-cabal-subsection-entry-list
+                          (haskell-cabal-section) "hs-source-dirs"))
+               (modules (haskell-cabal-subsection-entry-list
+                         (haskell-cabal-section) "exposed-modules"))
+               (mod-paths (delete-if-not
+                           (lambda (x) (string= testname (file-name-base x)))
+                           (mapcar 'haskell-cabal-module-to-filename modules)))
+               (full-paths (apply 'append
+                                  (mapcar
+                                   (lambda (dir)
+                                     (mapcar (lambda (mp)
+                                               (concat default-directory "/" dir "/" mp))
+                                             mod-paths))
+                                   src-dirs))))
+          (delete-if-not 'file-exists-p full-paths))))))
+
+(defun haskell-jump-test-to-src ()
+  (interactive)
+  (let ((srcs (haskell-test-to-src)))
+    (if (not srcs) (error "Couldn't find sources")
+      (find-file (car srcs)))))
+
+(defun haskell-toggle-src-test ()
+  (interactive)
+  (if (not (haskell-cabal-find-file)) (error "Not in haskell project")
+      (if (member "tests" (split-string (buffer-file-name) "/"))
+          (haskell-jump-test-to-src) (haskell-jump-src-to-test))))
 
 (provide 'fd-haskell)
