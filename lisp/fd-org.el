@@ -85,8 +85,11 @@
 	'("xelatex -interaction nonstopmode %f"
 	  "xelatex -interaction nonstopmode %f")) ;; for multiple passes
 
-  (setq org-file-apps '((auto-mode . emacs)
-			("\\.pdf\\'" . "open %s"))))
+  (setq org-file-apps (list
+                       '(auto-mode . emacs)
+                       (if (eq system-type 'darwin)
+                           '("\\.pdf\\'" . "open %s")
+                         '("\\.pdf\\'" . "evince %s")))))
 
 (add-hook 'org-mode-hook 'fd/org-latex-hook)
 
