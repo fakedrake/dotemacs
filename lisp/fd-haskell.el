@@ -1,15 +1,11 @@
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
-(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-(add-hook 'haskell-mode-hook 'fd-haskell-mode)
+(add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
 (setq haskell-process-type 'auto)
 (setq haskell-process-path-ghci "cabal")
 (setq haskell-process-args-ghci '("repl"))
 
-(defun fd-haskell-mode ()
-  (define-key 'haskell-mode-map (kbd "C-c C-t") 'haskell-toggle-src-test)
-  (setq comment-auto-fill-only-comments nil)
-  (setq haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall")))
+(defalias fd-haskell-mode drninjabatmans-haskell-mode)
 
 (defun fd-haskell-load-region ()
   (interactive)
@@ -41,6 +37,21 @@
   (let ((ael (assq (car el) compilation-error-regexp-alist-alist)))
     (if ael (setf (cdr ael) (cdr el))
       (add-to-list 'compilation-error-regexp-alist-alist el))))
+
+(defvar drninjabatmans-haskell-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
+    map)
+  "Keymap for using `interactive-haskell-mode'.")
+
+;;;###autoload
+(define-minor-mode drninjabatmans-haskell-mode
+  "Some extras for haskell-mode."
+  :lighter " DNB-Haskell"
+  :keymap drninjabatmans-haskell-mode-map
+  (setq comment-auto-fill-only-comments nil
+        haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall"))
+  (message "Using drninjabatman's haskell mode!"))
 
 (defun haskell-jump-src-to-test ()
   (interactive)
