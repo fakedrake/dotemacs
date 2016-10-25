@@ -1,11 +1,14 @@
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
+;; Make sure our mode overrides interactive-haskell-mode
+(remove-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
 (add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
+(remove-hook 'haskell-mode-hook 'interactive-haskell-mode)
+(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+
 (setq haskell-process-type 'auto)
 (setq haskell-process-path-ghci "cabal")
 (setq haskell-process-args-ghci '("repl"))
-
-(defalias fd-haskell-mode drninjabatmans-haskell-mode)
 
 (defun fd-haskell-load-region ()
   (interactive)
@@ -37,7 +40,7 @@
   (let ((ael (assq (car el) compilation-error-regexp-alist-alist)))
     (if ael (setf (cdr ael) (cdr el))
       (add-to-list 'compilation-error-regexp-alist-alist el))))
-
+(require 'haskell-mode)
 (defvar drninjabatmans-haskell-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
@@ -51,23 +54,35 @@
   :keymap drninjabatmans-haskell-mode-map
   (setq comment-auto-fill-only-comments nil
         haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall"))
+  (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
+  (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
+  (move-keymap-to-top 'yas-minor-mode)
   (message "Using drninjabatman's haskell mode!"))
 
 (defun haskell-jump-src-to-test ()
   (interactive)
   (let ((cabal-file (haskell-cabal-find-file)))
     (if (not cabal-file) (error "Not in haskell project.")
-    (let ((test-fname (concat (file-name-directory cabal-file)
-                              "tests/"
-                              (file-name-nondirectory (buffer-file-name)))))
-      (find-file test-fname)))))
+      (let ((test-fname (concat (file-name-directory cabal-file)
+                                "tests/"
+                                (file-name-nondirectory (buffer-file-name)))))
+        (find-file test-fname)))))
+
+(defun move-keymap-to-top (mode)
+  (let ((map (assq mode minor-mode-map-alist)))
+    (assq-delete-all mode minor-mode-map-alist)
+    (add-to-list 'minor-mode-map-alist map)))
 
 (defun haskell-test-to-src ()
   (let ((cabal-file (haskell-cabal-find-file))
         (testname (file-name-base (buffer-file-name))))
     (if (or (not cabal-file)) (error "Not in haskell project.")
       (with-current-buffer (find-file-noselect cabal-file)
-        (let* ((src-dirs (haskell-cabal-subsection-entry-list
+        (save-excursion
+          (goto-char (point-min))            ;XXX: we asume the first
+                                        ;hs-source-dirs encountered is
+                                        ;the right one
+          (let* ((src-dirs (haskell-cabal-subsection-entry-list
                           (haskell-cabal-section) "hs-source-dirs"))
                (modules (haskell-cabal-subsection-entry-list
                          (haskell-cabal-section) "exposed-modules"))
@@ -81,18 +96,52 @@
                                                (concat default-directory "/" dir "/" mp))
                                              mod-paths))
                                    src-dirs))))
-          (delete-if-not 'file-exists-p full-paths))))))
+          (delete-if-not 'file-exists-p full-paths)))))))
+
+(defmacro within-cabal-file (&rest body)
+  `(let ((cabal-file (haskell-cabal-find-file))
+         (testname (file-name-base (buffer-file-name))))
+     (if (or (not cabal-file)) (error "Not in haskell project.")
+       (with-current-buffer (find-file-noselect cabal-file)
+         ,@body))))
 
 (defun haskell-jump-test-to-src ()
   (interactive)
   (let ((srcs (haskell-test-to-src)))
-    (if (not srcs) (error "Couldn't find sources")
+    (if (not srcs) (error "Couldn't find sources from test file (maybe not in .cabal?)." )
       (find-file (car srcs)))))
 
 (defun haskell-toggle-src-test ()
   (interactive)
   (if (not (haskell-cabal-find-file)) (error "Not in haskell project")
-      (if (member "tests" (split-string (buffer-file-name) "/"))
-          (haskell-jump-test-to-src) (haskell-jump-src-to-test))))
+    (if (member "tests" (split-string (buffer-file-name) "/"))
+        (haskell-jump-test-to-src) (haskell-jump-src-to-test))))
+
+(defun haskell-cabal-get-key (key)
+  (haskell-cabal-subsection-entry-list (haskell-cabal-section) key))
+
+(defun haskell-infer-module-name ()
+  (car
+   (let ((fname (buffer-file-name)))
+     (within-cabal-file
+      (mapcar
+       (lambda (src-dir)
+         (replace-regexp-in-string
+          "\\.hs$" ""
+          (replace-regexp-in-string
+           "/" "."
+           (substring fname (+ 1 (length src-dir))))))
+       (delete-if-not
+        (lambda (x) (string-prefix-p x fname))
+        (mapcar
+         (apply-partially 'concat default-directory)
+         (haskell-cabal-get-key "hs-source-dirs"))))))))
+
+(defvar align-haskell-arrows-list '(haskell-arrows
+     (regexp   . "[^-=!^&*+<>/| \t\n]\\(\\s-*\\)->\\(\\s-*\\)\\([^= \t\n]\\|$\\)")
+     (group    . (1 2))
+     (justify . t)
+     (tab-stop . nil)
+     (modes    . (haskell-mode))))
 
 (provide 'fd-haskell)
