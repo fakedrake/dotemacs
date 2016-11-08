@@ -100,7 +100,8 @@
         google-c-style
         web-mode
         dtrace-script-mode
-        proof-general))
+        proof-general
+        emms))
 
 (setq
  el-get-sources

@@ -59,6 +59,7 @@
 (require 'fd-company)
 (require 'fd-aspell)
 (require 'fd-idris)
+(require 'fd-emms)
 
 (setq enable-local-variables :all)
 
