@@ -47,5 +47,7 @@
 
 (set-keyboard-coding-system 'mac-roman)
 (set-selection-coding-system 'mac-roman)
+(setq el-get-emacs "/Applications/Emacs.app/Contents/MacOS/Emacs")
+(setenv "EMACS" "/Applications/Emacs.app/Contents/MacOS/Emacs")
 
 (provide 'fd-macosx)
