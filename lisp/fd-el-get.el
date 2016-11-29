@@ -1,5 +1,6 @@
 ;; EL-GET
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get"))
+(add-to-list 'load-path (concat dotemacs-dir "el-get/el-get/queue"))
 (setq el-get-dir (concat dotemacs-dir "el-get"))
 (require 'package)
 (package-initialize)
@@ -14,6 +15,8 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
+        reddit-mode
+        tree-mode
         dictionary
         rainbow-delimiters
         google-translate
@@ -66,6 +69,9 @@
 	lua-mode
 	textile-mode
 	haskell-mode
+        structured-haskell-mode
+        ghc-mod
+        hs-lint
         ;; elm-mode
 	js2-mode
 	coffee-mode
@@ -73,6 +79,7 @@
         flymake-jslint
 	json-mode
 	graphviz-dot-mode
+        queue
 	cider
 	; ac-nrepl
 	clojure-mode
@@ -260,6 +267,36 @@
         :description "Pattern matching for j"
         :type github
         :pkgname "VincentToups/shadchen-el")
+ (:name elfeed-org
+        :description "Configure the Elfeed RSS reader with an Orgmode file"
+        :type github
+        :pkgname "remyhonig/elfeed-org")
+ (:name reddit-mode
+        :description "Reddit mode for Emacs"
+        :type github
+        :depends (tree-mode)
+        :pkgname "death/reddit-mode")
+ (:name tree-mode
+        :description "Tree widgets"
+        :type github
+        :pkgname "emacsmirror/tree-mode")
+
+ (:name queue
+        :description "Override the shitty melpa mirror"
+        :type github
+        :pkgname "emacsmirror/queue")
+ (:name emacs-w3m
+       :description "A simple Emacs interface to w3m"
+       :type cvs
+       :website "http://emacs-w3m.namazu.org/"
+       :module "emacs-w3m"
+       :url ":pserver:anonymous@cvs.namazu.org:/storage/cvsroot"
+       :build `(("autoconf") ("./configure" ,(format "--with-emacs=%s" el-get-emacs) ) ("make"))
+       :build/windows-nt (("sh" "./autogen.sh")
+                          ("sh" "./configure")
+                          ("make"))
+       :info "doc")
+
  ))
 
 

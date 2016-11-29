@@ -20,6 +20,7 @@
 (setq emms-stream-info-polling-interval 2)
 (defun emms-maybe-poll-track-info (track polling-thread)
   "Will check the invariants of polling:
+
 - polled track is playing
 - polled track is polled by only one thread
 

@@ -101,28 +101,29 @@ parent."
 	ad-do-it)
     ad-do-it))
 
+(defun move-text-block-internal (start end lines)
+  (let ((text (buffer-substring start end))
+        (rel-mark (- (mark) end))
+        (move-mark (and mark-active transient-mark-mode))
+        (rel-point (- (point) end)))
+    (delete-region start end)
+    (forward-line lines)
+    (insert text)
+    ;; Restore mark and point
+    (let ((new-end (point)))
+      (goto-char (+ new-end rel-point))
+      (when move-mark
+        (pop-mark)
+        (push-mark (+ new-end rel-mark))
+        (activate-mark)))))
+
 (defun move-text-internal (arg)
-  (let ((cc (current-column)))
-    (cond
-     ((and mark-active transient-mark-mode)
+  (if (and mark-active transient-mark-mode)
       (if (> (point) (mark))
-	  (exchange-point-and-mark))
-      (let ((column (current-column))
-	    (text (delete-and-extract-region (point) (mark))))
-	(forward-line arg)
-	(move-to-column column t)
-	(set-mark (point))
-	(insert text)
-	(exchange-point-and-mark)
-	(setq deactivate-mark nil)))
-     (t
-      (beginning-of-line)
-      (when (or (> arg 0) (not (bobp)))
-	(forward-line)
-	(when (or (< arg 0) (not (eobp)))
-	  (transpose-lines arg))
-	(forward-line (min (- arg 1) -1))
-	(move-to-column cc))))))
+	  (move-text-block-internal (mark) (point) arg)
+        (move-text-block-internal (point) (mark) arg))
+    (move-text-block-internal
+     (line-beginning-position) (+ 1 (line-end-position)) arg)))
 
 (defun move-text-down (arg)
   "Move region (transient-mark-mode active) or current line
@@ -354,5 +355,7 @@ ignore buffers with."
 (require 'grep)
 (add-to-list 'grep-find-ignored-directories ".cabal-sandbox")
 (add-to-list 'grep-find-ignored-directories "node_modules")
+
+(setq enable-recursive-minibuffers t)
 
 (provide 'fd-misc)

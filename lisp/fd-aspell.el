@@ -64,4 +64,8 @@
   (ispell-change-dictionary "greek")
   (flyspell-buffer))
 
+(setq ispell-program-name "aspell")
+(setq ispell-really-aspell t)
+(setq ispell-extra-args '("--sug-mode=fast"))
+
 (provide 'fd-aspell)

@@ -46,17 +46,25 @@
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
     map)
   "Keymap for using `interactive-haskell-mode'.")
-
 ;;;###autoload
 (define-minor-mode drninjabatmans-haskell-mode
   "Some extras for haskell-mode."
   :lighter " DNB-Haskell"
   :keymap drninjabatmans-haskell-mode-map
+  (require 'shm)
   (setq comment-auto-fill-only-comments nil
         haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall"))
   (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
+  ;; (structured-haskell-mode t)
+  (turn-on-haskell-indentation)
+  (auto-complete-mode -1)
+  (ghc-init)
+  (if-let ((adv (assq 'ghc-check-syntax-on-save
+                      (ad-get-advice-info-field #'save-buffer 'after))))
+      (ad-advice-set-enabled adv nil))
+  (set-face-attribute 'shm-current-face nil :background nil)
   (message "Using drninjabatman's haskell mode!"))
 
 (defun haskell-jump-src-to-test ()
@@ -143,5 +151,12 @@
      (justify . t)
      (tab-stop . nil)
      (modes    . (haskell-mode))))
+
+(require 'hs-lint)
+(defun my-haskell-mode-hook ()
+  (setq hs-lint-replace-with-suggestions t)
+  (rainbow-delimiters-mode 1)
+  (local-set-key "\C-cl" 'hs-lint))
+(add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
 
 (provide 'fd-haskell)
