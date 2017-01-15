@@ -74,4 +74,21 @@ blocked."
              ;; Refresh notmuch
              'getmail-refresh-notmuch))))))))
 
+(add-hook 'notmuch-message-mode-hook #'fd-notmuch-message)
+(add-hook 'notmuch-show-hook #'fd-notmuch-show)
+
+(defun fd-lang-change ()
+  "Change language and dictionary,"
+  (interactive)
+  (toggle-input-method)
+  (ispell-change-dictionary (or current-input-method "english")))
+
+(defun fd-notmuch-message ()
+  (flyspell-mode)
+  (define-key notmuch-message-mode-map (kbd "M-\\") 'fd-lang-change)
+  (define-key notmuch-message-mode-map (kbd "C-\\") 'fd-lang-change))
+
+(defun fd-notmuch-show ()
+  (define-key notmuch-show-mode-map "r" 'notmuch-show-reply))
+
 (provide 'fd-mail)
