@@ -15,7 +15,6 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
-        imaxima
         irony-mode
         tree-mode
         dictionary
