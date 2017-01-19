@@ -43,6 +43,7 @@
 (require 'haskell-mode)
 (defvar drninjabatmans-haskell-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-l") 'haskell-process-load-file-and-then-imports)
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
     map)
   "Keymap for using `interactive-haskell-mode'.")
@@ -53,14 +54,15 @@
   :keymap drninjabatmans-haskell-mode-map
   (require 'shm)
   (setq comment-auto-fill-only-comments nil
-        haskell-process-args-stack-ghci '("--ghc-options=-ferror-spans,-Wall"))
+        haskell-process-args-stack-ghci '())
+  (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
   (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
   ;; (structured-haskell-mode t)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
-  (ghc-init)
+  ; (ghc-init)
   (if-let ((adv (assq 'ghc-check-syntax-on-save
                       (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
@@ -91,20 +93,20 @@
                                         ;hs-source-dirs encountered is
                                         ;the right one
           (let* ((src-dirs (haskell-cabal-subsection-entry-list
-                          (haskell-cabal-section) "hs-source-dirs"))
-               (modules (haskell-cabal-subsection-entry-list
-                         (haskell-cabal-section) "exposed-modules"))
-               (mod-paths (delete-if-not
-                           (lambda (x) (string= testname (file-name-base x)))
-                           (mapcar 'haskell-cabal-module-to-filename modules)))
-               (full-paths (apply 'append
-                                  (mapcar
-                                   (lambda (dir)
-                                     (mapcar (lambda (mp)
-                                               (concat default-directory "/" dir "/" mp))
-                                             mod-paths))
-                                   src-dirs))))
-          (delete-if-not 'file-exists-p full-paths)))))))
+                            (haskell-cabal-section) "hs-source-dirs"))
+                 (modules (haskell-cabal-subsection-entry-list
+                           (haskell-cabal-section) "exposed-modules"))
+                 (mod-paths (delete-if-not
+                             (lambda (x) (string= testname (file-name-base x)))
+                             (mapcar 'haskell-cabal-module-to-filename modules)))
+                 (full-paths (apply 'append
+                                    (mapcar
+                                     (lambda (dir)
+                                       (mapcar (lambda (mp)
+                                                 (concat default-directory "/" dir "/" mp))
+                                               mod-paths))
+                                     src-dirs))))
+            (delete-if-not 'file-exists-p full-paths)))))))
 
 (defmacro within-cabal-file (&rest body)
   `(let ((cabal-file (haskell-cabal-find-file))
@@ -146,17 +148,54 @@
          (haskell-cabal-get-key "hs-source-dirs"))))))))
 
 (defvar align-haskell-arrows-list '(haskell-arrows
-     (regexp   . "[^-=!^&*+<>/| \t\n]\\(\\s-*\\)->\\(\\s-*\\)\\([^= \t\n]\\|$\\)")
-     (group    . (1 2))
-     (justify . t)
-     (tab-stop . nil)
-     (modes    . (haskell-mode))))
+                                    (regexp   . "[^-=!^&*+<>/| \t\n]\\(\\s-*\\)->\\(\\s-*\\)\\([^= \t\n]\\|$\\)")
+                                    (group    . (1 2))
+                                    (justify . t)
+                                    (tab-stop . nil)
+                                    (modes    . (haskell-mode))))
 
 (require 'hs-lint)
 (defun my-haskell-mode-hook ()
   (setq hs-lint-replace-with-suggestions t)
   (rainbow-delimiters-mode 1)
   (local-set-key "\C-cl" 'hs-lint))
+
+(defun pair-list (lst)
+  (let ((iter lst) (ret nil))
+    (while iter
+      (setq ret (cons (cons (car iter) (cadr iter)) ret))
+      (setq iter (cddr iter)))
+    (reverse ret)))
+
+(defun haskell-collect-imports (&optional buffer)
+  (let ((buf (or buffer (current-buffer))) (ret nil))
+    (save-excursion
+      (goto-char (point-min))
+      (while (search-forward-regexp "^import .*$" nil t)
+        (setq ret (cons (buffer-substring (match-beginning 0) (match-end 0)) ret))))
+    ret))
+
+(defun haskell-send-imports-internal (process imports done)
+  (if (null imports) (and done (funcall done))
+    (haskell-process-queue-command
+     process
+     (make-haskell-command
+      :state (list (car imports) process (cdr imports) done)
+      :go (lambda (state)
+            (message (concat "Importing: " (car state)))
+            (haskell-process-send-string (cadr state) (car state)))
+      :live (lambda (state response) nil)
+      :complete (lambda (state response)
+                  (apply 'haskell-send-imports-internal (cdr state)))))))
+
+(defun haskell-process-load-file-and-then-imports ()
+  (interactive)
+  (call-interactively 'haskell-process-load-file)
+  (haskell-send-imports (haskell-process)))
+
+(defun haskell-send-imports (process &optional buffer done)
+  (haskell-send-imports-internal process (haskell-collect-imports buffer) done))
+
 (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
 
 (provide 'fd-haskell)

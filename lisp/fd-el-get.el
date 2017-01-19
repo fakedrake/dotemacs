@@ -15,11 +15,10 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
-        reddit-mode
+        irony-mode
         tree-mode
         dictionary
         rainbow-delimiters
-        google-translate
         dired-hacks
         notmuch
 	s
@@ -27,7 +26,6 @@
 	pkg-info
 	request
         auctex
-        prop-menu
         idris-mode
 
         ;; flycheck
@@ -37,7 +35,7 @@
 	;; Python
 	python
 	; django-mode ; snippets get fucked up
-	jedi
+	company-jedi
 	;; ein
 
 	;; Auto Complete packages
@@ -84,7 +82,6 @@
 	; ac-nrepl
 	clojure-mode
         nodejs-repl
-        js-doc
 	;; cscope
 	cmake-mode
 	multi-term
@@ -99,7 +96,6 @@
         cdlatex-mode
 	markdown-mode
 	ggtags
-	zencoding-mode
 	;git-emacs
 	magit
 	bm
@@ -253,11 +249,6 @@
           :url "git://notmuchmail.org/git/notmuch"
           :load-path ("./emacs"))
 
- (:name nevermore
-        :description "Notmuch based mail client"
-        :type github
-        :depends (company-mode notmuch)
-        :pkgname "tjim/nevermore")
  (:name gazelle
         :description "Lisp to js"
         :type github

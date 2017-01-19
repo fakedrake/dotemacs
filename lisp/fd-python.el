@@ -1,10 +1,5 @@
 ; Python
 
-;; Fix docstring paragraph filling
-(add-hook 'python-mode-hook (lambda ()
-			      (setq paragraph-start (concat paragraph-start "\\|\\s-*\"\"\".*$")
-				    python-fill-docstring-style 'django)))
-
 (require 'python)
 ;; (defun py-my-indent-region (&optional min max)
 ;;   "Stupidly clamp indentation to the closest multiple of 4 spaces."
@@ -21,8 +16,22 @@
 
 
 (add-to-list 'auto-mode-alist '("\\.djhtml$" . web-mode))
+(defun my/python-mode-hook ()
+  (define-key python-mode-map (kbd "C-c C-t")
+    'fd-python-jump-between-test-and-implementation)
+  (define-key python-mode-map (kbd "C-c M-t") 'fd-python-run-tests)
+  (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
+  (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
+  (local-unset-key (kbd "<backtab>"))
+  (setq jedi:setup-function nil
+        jedi:mode-function nil)
+  (jedi:setup)
+  (add-to-list 'company-backends 'company-jedi)
+  ;; Fix docstring paragraph filling
+  (setq paragraph-start (concat paragraph-start "\\|\\s-*\"\"\".*$")
+        python-fill-docstring-style 'django))
 
-(add-hook 'python-mode-hook 'jedi:setup)
+(add-hook 'python-mode-hook 'my/python-mode-hook)
 (setq jedi:setup-keys t)
 (setq jedi:complete-on-dot t)
 (setq-default python-shell-virtualenv-path "~/bin/py")
@@ -208,17 +217,6 @@ is nil check if path in any project."
     (when (null default-directory) (error "Not in a python project."))
     (when (get-buffer "*gud-pdb*") (kill-buffer-ask (get-buffer "*gud-pdb*")))
     (pdb cmd)))
-
-(defun fd-python-hook ()
-  (define-key python-mode-map (kbd "C-c C-t")
-    'fd-python-jump-between-test-and-implementation)
-  (define-key python-mode-map (kbd "C-c M-t") 'fd-python-run-tests)
-  (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
-  (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
-  (local-unset-key (kbd "<backtab>")))
-
-(add-hook 'python-mode-hook 'fd-python-hook)
-
 
 (defun pep8-diff ()
   "Starts an ediff session between the FILE and its specified revision.
