@@ -1,9 +1,3 @@
-(setq gnus-select-method
-      '(nnimap "gmail"
-	       (nnimap-address "imap.gmail.com")
-	       (nnimap-server-port 993)
-	       (nnimap-stream ssl)))
-
 (setq message-send-mail-function 'smtpmail-send-it
       smtpmail-starttls-credentials '(("outgoing.csail.mit.edu" 587 nil nil))
       smtpmail-auth-credentials '(("outgoing.csail.mit.edu" 587

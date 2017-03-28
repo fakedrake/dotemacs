@@ -15,7 +15,9 @@
 
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
+        flycheck
         irony-mode
+        sx
         tree-mode
         dictionary
         rainbow-delimiters
@@ -31,6 +33,7 @@
         ;; flycheck
 	;; ;; Elisp hepers
 	f
+        slime
 
 	;; Python
 	python
