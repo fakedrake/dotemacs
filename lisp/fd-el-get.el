@@ -16,6 +16,7 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
+        imaxima
         irony-mode
         sx
         tree-mode
