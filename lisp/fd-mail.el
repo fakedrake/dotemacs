@@ -1,9 +1,3 @@
-(setq gnus-select-method
-      '(nnimap "gmail"
-	       (nnimap-address "imap.gmail.com")
-	       (nnimap-server-port 993)
-	       (nnimap-stream ssl)))
-
 (setq message-send-mail-function 'smtpmail-send-it
       smtpmail-starttls-credentials '(("outgoing.csail.mit.edu" 587 nil nil))
       smtpmail-auth-credentials '(("outgoing.csail.mit.edu" 587
@@ -90,5 +84,15 @@ blocked."
 
 (defun fd-notmuch-show ()
   (define-key notmuch-show-mode-map "r" 'notmuch-show-reply))
+
+(setq message-signature "Chris Perivolaropoulos
+University of Edinburgh
+School of Informatics - IF-2.05
+
+Web: fakedrake.github.io
+Mail: c.perivol@ed.ac.uk
+")
+
+(add-to-list 'notmuch-saved-searches `(:name "zurich" :query "tag:zurich" :key ,(kbd "z")))
 
 (provide 'fd-mail)

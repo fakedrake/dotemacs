@@ -310,8 +310,8 @@ from ignoring export options at the beginning of the file."
 ;;   :modes (text-mode markdown-mode gfm-mode))
 (add-hook 'markdown-mode-hook 'fd-markdown-hook)
 (defun fd-markdown-hook ()
-  (define-key 'markdown-mode-map (kbd "<S-tab>") nil)
-  (define-key 'markdown-mode-map (kbd "<C-tab>") nil))
+  (define-key markdown-mode-map (kbd "<S-tab>") nil)
+  (define-key markdown-mode-map (kbd "<C-tab>") nil))
 
 ;; (add-to-list 'flycheck-checkers 'proselint)
 
