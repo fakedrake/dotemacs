@@ -357,5 +357,7 @@ ignore buffers with."
 (add-to-list 'grep-find-ignored-directories "node_modules")
 
 (setq enable-recursive-minibuffers t)
+(setq ido-cr+-max-items 50000)
 
+(setq enable-local-variables :all)
 (provide 'fd-misc)

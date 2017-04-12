@@ -21,6 +21,7 @@
         sx
         tree-mode
         dictionary
+        go-mode
         rainbow-delimiters
         dired-hacks
         notmuch
@@ -30,6 +31,7 @@
 	request
         auctex
         idris-mode
+        scala-mode
 
         ;; flycheck
 	;; ;; Elisp hepers

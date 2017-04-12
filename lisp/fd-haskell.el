@@ -45,6 +45,8 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-l") 'haskell-process-load-file-and-then-imports)
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
+    (define-key map (kbd "C-c C-i") 'haskell-jump-to-or-insert-defininition)
+    (define-key map (kbd "C-c i") 'haskell-jump-to-or-insert-defininition)
     map)
   "Keymap for using `interactive-haskell-mode'.")
 ;;;###autoload
@@ -53,20 +55,24 @@
   :lighter " DNB-Haskell"
   :keymap drninjabatmans-haskell-mode-map
   (require 'shm)
+
   (setq comment-auto-fill-only-comments nil
         haskell-process-args-stack-ghci '())
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
   (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
-  ;; (structured-haskell-mode t)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
-  ; (ghc-init)
+  (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
+                                        ; (ghc-init)
   (if-let ((adv (assq 'ghc-check-syntax-on-save
                       (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
-  (set-face-attribute 'shm-current-face nil :background nil)
+                                        ; (set-face-attribute 'shm-current-face nil :background nil)
+  ;; (structured-haskell-mode t)
+  ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)
+  ;; (define-key interactive-haskell-mode-map (kbd "C-M-e") 'shm/goto-parent-end)
   (message "Using drninjabatman's haskell mode!"))
 
 (defun haskell-jump-src-to-test ()
@@ -197,5 +203,53 @@
   (haskell-send-imports-internal process (haskell-collect-imports buffer) done))
 
 (add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
+
+(defun haskell-jump-to-or-insert-defininition ()
+  "Look for the last function declaration before the point. If
+there is a definion alread jump to that. If not insert one."
+  (interactive)
+  (if-let ((decl-pos (save-excursion
+                       (end-of-line)
+                       (haskell-previous-declaration-search)))
+           (fun-name (match-string 1))
+           (def-pos (or (haskell-find-definition fun-name decl-pos)
+                        (progn
+                          (haskell-make-available-line)
+                          (haskell-insert-function-stump fun-name)))))
+      (goto-char def-pos)))
+
+(defun haskell-make-available-line ()
+  "Find a blank line suitable for inserting a function
+definition. If there seems to be none before the next block of
+code create one."
+  (end-of-line)
+  (when (re-search-forward "^\\($\\|.\\)" nil t)
+    (unless (looking-back "\n")
+      (beginning-of-line) (save-excursion (insert "\n")))
+    (beginning-of-line)))
+
+(defun haskell-insert-function-stump (fun-name)
+  "Insert a function definition stump."
+  (insert fun-name) (insert " ")
+  (save-excursion (insert " = undefined")))
+
+(defun haskell-previous-declaration-search ()
+  "Search backward for a function declaration."
+  (save-excursion
+    (re-search-backward "^\\([[:alnum:]]*\\) ::")))
+
+(defun haskell-find-definition (func-name &optional decl-point)
+  "Search for the definition of FUNC-NAME starting at DECL-POINT
+or the beginning of the buffer. Retrn the resulting position. The
+return value is the point before the = sign."
+  (save-excursion
+    (goto-char (or decl-point (point-min)))
+    (when (re-search-forward
+           (concat "^\\(" func-name "\\)\\( +[[:alnum:]_]+\\)* *=") nil t)
+      (if (looking-back " =") (backward-char 2) (backward-char 1))
+      (point))))
+
+(defun haskell-beginning-of-defun ()
+  (save-match-data (re-seach-backwards "^[[:alnum:]]+")))
 
 (provide 'fd-haskell)

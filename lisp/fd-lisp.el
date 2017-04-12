@@ -40,5 +40,4 @@
 ;; (eval-after-load "auto-complete"
 ;;   '(add-to-list 'ac-modes 'cider-repl-mode))
 
-
 (provide 'fd-lisp)

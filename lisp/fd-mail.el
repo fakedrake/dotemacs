@@ -85,4 +85,14 @@ blocked."
 (defun fd-notmuch-show ()
   (define-key notmuch-show-mode-map "r" 'notmuch-show-reply))
 
+(setq message-signature "Chris Perivolaropoulos
+University of Edinburgh
+School of Informatics - IF-2.05
+
+Web: fakedrake.github.io
+Mail: c.perivol@ed.ac.uk
+")
+
+(add-to-list 'notmuch-saved-searches `(:name "zurich" :query "tag:zurich" :key ,(kbd "z")))
+
 (provide 'fd-mail)
