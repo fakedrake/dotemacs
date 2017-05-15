@@ -16,7 +16,7 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
-        imaxima
+        ; imaxima
         irony-mode
         sx
         tree-mode
@@ -110,7 +110,8 @@
         web-mode
         dtrace-script-mode
         proof-general
-        emms))
+        ;emms
+	))
 
 (setq
  el-get-sources
