@@ -96,23 +96,23 @@ sphinx describing the arguments."
 (defun fd-yas:today ()
   (format-time-string "%Y-%m-%d %R"))
 
-(defun yas--save-backquotes ()
-  "Save all the \"`(lisp-expression)`\"-style expressions
-with their evaluated value into `yas--backquote-markers-and-strings'."
-  (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
-    (let ((current-string (match-string-no-properties 1)) transformed)
-      (save-match-data                  ;XXX: here is my addition
-        (save-restriction (widen)
-                          (delete-region (match-beginning 0) (match-end 0))))
-      (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
-      (goto-char (match-beginning 0))
-      (when transformed
-        (let ((marker (make-marker)))
-          (save-restriction
-            (widen)
-            (insert "Y") ;; quite horrendous, I love it :)
-            (set-marker marker (point))
-            (insert "Y"))
-          (push (cons marker transformed) yas--backquote-markers-and-strings))))))
+;; (defun yas--save-backquotes ()
+;;   "Save all the \"`(lisp-expression)`\"-style expressions
+;; with their evaluated value into `yas--backquote-markers-and-strings'."
+;;   (while (re-search-forward yas--backquote-lisp-expression-regexp nil t)
+;;     (let ((current-string (match-string-no-properties 1)) transformed)
+;;       (save-match-data                  ;XXX: here is my addition
+;;         (save-restriction (widen)
+;;                           (delete-region (match-beginning 0) (match-end 0))))
+;;       (setq transformed (yas--eval-lisp (yas--read-lisp (yas--restore-escapes current-string '(?`)))))
+;;       (goto-char (match-beginning 0))
+;;       (when transformed
+;;         (let ((marker (make-marker)))
+;;           (save-restriction
+;;             (widen)
+;;             (insert "Y") ;; quite horrendous, I love it :)
+;;             (set-marker marker (point))
+;;             (insert "Y"))
+;;           (push (cons marker transformed) yas--backquote-markers-and-strings))))))
 
 (provide 'fd-yasnippet)
