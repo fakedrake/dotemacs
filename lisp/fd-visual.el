@@ -73,7 +73,9 @@
          `(link ((t (:foreground  "#729fcf" :underline t))))
 
          ;; ERC
-         `(erc-prompt-face ((t (:background "#f57900" :bold t :foreground "gray10"))))))))
+         `(erc-prompt-face ((t (:background "#f57900" :bold t :foreground "gray10"))))
+         `(haskell-debug-trace-number-face ((t :weight bold :background "#a5a5a5")))
+         `(haskell-debug-newline-face ((t :weight bold :background "#a0a0a0")))))))
 (set-theme)
 
 (defun fd-new-buf-extension (dir &optional default path-len)

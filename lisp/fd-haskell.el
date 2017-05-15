@@ -64,6 +64,7 @@
   (move-keymap-to-top 'yas-minor-mode)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
+  (haskell-decl-scan-mode 1)
   (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
                                         ; (ghc-init)
   (if-let ((adv (assq 'ghc-check-syntax-on-save
@@ -73,7 +74,7 @@
   ;; (structured-haskell-mode t)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-e") 'shm/goto-parent-end)
-  (message "Using drninjabatman's haskell mode!"))
+  )
 
 (defun haskell-jump-src-to-test ()
   (interactive)
@@ -236,7 +237,7 @@ code create one."
 (defun haskell-previous-declaration-search ()
   "Search backward for a function declaration."
   (save-excursion
-    (re-search-backward "^\\([[:alnum:]]*\\) ::")))
+    (re-search-backward "^\\([[:alpha:]][[:alnum:]'_]*\\) ::")))
 
 (defun haskell-find-definition (func-name &optional decl-point)
   "Search for the definition of FUNC-NAME starting at DECL-POINT
@@ -252,4 +253,6 @@ return value is the point before the = sign."
 (defun haskell-beginning-of-defun ()
   (save-match-data (re-seach-backwards "^[[:alnum:]]+")))
 
+
+(add-to-list 'haskell-font-lock-keywords "forall")
 (provide 'fd-haskell)

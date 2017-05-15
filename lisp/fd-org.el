@@ -330,4 +330,10 @@ from ignoring export options at the beginning of the file."
      "* References %?\n\n%a\n\n%:author (%:year): %:title\n   \
          In %:journal, %:pages.")))
 
+;; Org export keeps bothering about the final newline
+(require 'tex)
+(defun fd-latex-mode-hook ()
+  (setq-local require-final-newline nil))
+(add-hook 'LaTeX-mode-hook #'fd-latex-mode-hook)
+
 (provide 'fd-org)

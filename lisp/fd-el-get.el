@@ -16,7 +16,7 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
-        imaxima
+        ;;imaxima
         irony-mode
         sx
         tree-mode
@@ -32,6 +32,8 @@
         auctex
         idris-mode
         scala-mode
+        pdf-tools
+        org-pdfview
 
         ;; flycheck
 	;; ;; Elisp hepers
@@ -282,6 +284,10 @@
         :description "Override the shitty melpa mirror"
         :type github
         :pkgname "emacsmirror/queue")
+ (:name org-pdfview
+        :description "org-link support for pdf-view-mode"
+        :type github
+        :pkgname "markus1189/org-pdfview")
  (:name emacs-w3m
        :description "A simple Emacs interface to w3m"
        :type cvs

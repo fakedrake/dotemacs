@@ -61,6 +61,7 @@
 (require 'fd-idris)
 (require 'fd-emms)
 (require 'fd-maxima)
+(require 'fd-pdf)
 
 (setq enable-local-variables :all)
 
