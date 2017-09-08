@@ -1,4 +1,4 @@
-;; EL-GET
+1;; EL-GET
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get"))
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get/queue"))
 (setq el-get-dir (concat dotemacs-dir "el-get"))
@@ -73,7 +73,6 @@
 	lua-mode
 	textile-mode
 	haskell-mode
-        structured-haskell-mode
         ghc-mod
         hs-lint
         ;; elm-mode
@@ -111,6 +110,9 @@
         dtrace-script-mode
         proof-general
         ;emms
+        ;
+        skewer-mode
+        ein
 	))
 
 (setq

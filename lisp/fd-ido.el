@@ -4,12 +4,13 @@
 (require 'ido-speed-hack)
 (require 'ido-better-flex)
 (require 'ido-ubiquitous)
-(ido-mode t)
-(ido-ubiquitous-mode t)
+(ido-mode 1)
+(add-to-list 'ido-ubiquitous-function-overrides '(enable exact "read-file-name"))
+(ido-ubiquitous-mode 1)
 (setq ido-save-directory-list-file (my-expand-path ".ido.last"))
 (setq ido-enable-flex-matching t)
 (setq ido-auto-merge-work-directories-length -1)
-;; (ido-everywhere t)
+(ido-everywhere t)
 ;; This is mainly for just swapped letters. It sometimes doesnt catch
 ;; entire words
 (ido-better-flex/enable)

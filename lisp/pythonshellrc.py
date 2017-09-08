@@ -48,32 +48,36 @@ def src_to_modules(path):
 
   return modules
 
+def update_dep(fname, mname):
+  for l in open(fname).readlines():
+    if l.startswith("import ") or l.startswith("from "):
+      iline = [i.strip().strip(',') for i in l.split(' as ')[0].split(" ") if len(i) > 1]
+      if iline[0] == 'import':
+        for x in iline[1:]:
+          DEPS[mname].add(x)
+          RDEPS[x].add(mname)
+      elif len(iline) > 1 and iline[0] == 'from':
+        DEPS[mname].add(iline[1])
+        RDEPS[iline[1]].add(mname)
+
+
+
+
 def update_deps():
   """
   From the loaded modules read their files and see what modules they
   depend on populating DEPS and RDEPS.
   """
-  global DEPS, RDEPS
+
   for m in sys.modules.values():
-    if not hasattr(m, '__package__') or  m.__package__ in DEPS:
+    if not hasattr(m, '__file__') or not hasattr(m, '__name__') or  m.__name__ in DEPS:
       continue
 
-    fname = module_src(m)
-    mname = m.__package__
     try:
-      for l in open(fname):
-        if l.startswith("import ") or l.startswith("from "):
-          iline = [i.strip() for i in l.split(" ") if len(i) > 1]
-          if iline[0] == 'import':
-            for x in iline[1:]:
-              DEPS[mname].add(x)
-              RDEPS[x].add(mname)
-          elif iline[0] == 'from':
-            DEPS[mname].add(iline[1])
-            RDEPS[iline[1]].add(x)
-
+      update_dep(module_src(m), m.__name__)
     except:
       continue
+
 
 def deep_reload(module):
   """
@@ -81,26 +85,58 @@ def deep_reload(module):
   them. Uses DEPS and RDEPS so run updeate_deps() before this
   function.
   """
-
   seen_modules = set()
-  stack = list(module) if hasattr(module, '__iter__') else [module]
-  while len(stack):
+  stack = [m.__name__ for m in module] if hasattr(module, '__iter__') else [module.__name__]
+  tmp = []
+  while len(stack) > 0:
     m = stack.pop()
+    p = sys.modules.get(m, None)
+    if p:
+      tmp.append((m, p))
+      stack += list(RDEPS[m])
 
-    # There should be no circular deps but we got the tree from source
-    # files.
-    if m in seen_modules:
+  reloaded = []
+  for (m, p) in reversed(tmp):
+    if m in reloaded:
       continue
 
-    reload(sys.modules[m])
-    stack += list(RDEPS[m])
-    seen_modules = seen_modules.union(RDEPS[m])
+    reloaded.append(m)
+
+  ret = []
+  for m in reversed(reloaded):
+    print "Reloading:", m
+    p = sys.modules[m]
+    ret.append(p)
+    reload(p)
+
+  return ret
+
+def reload_file(path):
+  # Update the dep graphs with new imports.
+  update_deps()
+
+  # Update the dependency graphs graphs with possible new dependencies.
+  ms = src_to_modules(path)
+  for m in ms:
+    update_dep(path, m)
+
+  # Do the reload
+  ms = deep_reload(ms)
+
+  # All top level symbols that were just loaded from `path` should be
+  # taken from the module.
+  for km,vm in globals().iteritems():
+    for md in reversed([i.__dict__ for i in ms]):
+      # Reload an object itself
+      if km in md:
+        globals()[km] = md[km]
+        break
 
 def showtraceback(self):
-    traceback_lines = traceback.format_exception(*sys.exc_info())
-    del traceback_lines[1]
-    message = ''.join(traceback_lines)
-    sys.stderr.write(message)
+  traceback_lines = traceback.format_exception(*sys.exc_info())
+  del traceback_lines[1]
+  message = ''.join(traceback_lines)
+  sys.stderr.write(message)
 
 IPython.core.interactiveshell.InteractiveShell.showtraceback = showtraceback
 IPython.core.interactiveshell.InteractiveShell._instance.prompt_manager.in_template = u'>>> '

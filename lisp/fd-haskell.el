@@ -54,7 +54,6 @@
   "Some extras for haskell-mode."
   :lighter " DNB-Haskell"
   :keymap drninjabatmans-haskell-mode-map
-  (require 'shm)
 
   (setq comment-auto-fill-only-comments nil
         haskell-process-args-stack-ghci '())

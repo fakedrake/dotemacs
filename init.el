@@ -60,7 +60,7 @@
 (require 'fd-aspell)
 (require 'fd-idris)
 ; (require 'fd-emms)
-; (require 'fd-maxima)
+(require 'fd-google)
 
 (setq enable-local-variables :all)
 
@@ -73,7 +73,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(highlight ((t (:background nil :underline t :weight bold)))))
 (put 'narrow-to-page 'disabled nil)
 
 (custom-set-variables
@@ -81,6 +81,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(package-selected-packages (quote (edit-indirect)))
  '(safe-local-variable-values
    (quote
     ((compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
