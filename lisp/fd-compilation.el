@@ -3,6 +3,47 @@
 (require 's)
 (require 'notifications)
 
+(defmacro with-function-args (func-and-args &rest body)
+  "FUNC-AND-ARGS is a cons of function symbol and a function that
+accepts the same args as the function corresponding to car but
+returns non-nil if the function is to be called."
+  (lexical-let* ((lexical-binding t)
+                 (validate-args (cdr func-and-args))
+                 (func-symbol (car func-and-args))
+                 (real-func (symbol-function func-symbol)))
+    (cl-flet ((wrapped-func (&rest args)
+                            (if (apply validate-args args)
+                                (apply real-func args)
+                              (throw 'func-call-signal 'function-called))))
+      `(let ((counter 1) (ret))
+         (while (and
+                 (> counter 0)
+                 ;; Run the body and check that 'function-called was thrown
+                 (eq 'function-called
+                     (catch 'func-call-signal
+                       ;; When evaluating func-symbol use wrapped-func
+                       (cl-letf (((symbol-function ,func-symbol) ,(symbol-function #'wrapped-func)))
+                         (setq ret (progn ,@body))))))
+           (setq counte r (- counter 1)))
+         (when (<= counter 0)
+           (error (concat "Failed to run body without call to " (symbol-name))))
+         ret))))
+
+(defmacro with-no-function (func-sym &rest body)
+  "Instead of calling function FUNC-SYM in BODY, retry."
+  `(let ((counter 10))
+     (while (and
+             (> counter 0)
+             (eq 'function-called
+                 (catch 'func-call-signal
+                   (cl-letf (((symbol-function ,func-sym)
+                              (lambda (&rest args)
+                                (throw 'func-call-signal 'function-called))))
+                     ,@body))))
+       (setq counter (- counter 1)))
+     (when (<= counter 0)
+       (error (concat "Failed to run body without call to " (symbol-name))))))
+
 (defun compilation-end-defun (compilation-buffer result)
   (with-current-buffer compilation-buffer
     (if (string= (buffer-name) "*compilation*")
@@ -64,11 +105,9 @@
 (defun fd-last-error ()
   "Jump to last error."
   (interactive)
-  (while (not
-          (eq (condition-case err
-                  (next-error)
-                (error 'cs-last-error-here))
-              'cs-last-error-here))))
+  (with-current-buffer (compilation-find-buffer)
+    (setq-local compilation-current-error (point-max))
+    (with-no-function 'read-file-name (previous-error))))
 
 (defalias 'read-directory-name 'ido-read-directory-name)
 
@@ -118,8 +157,19 @@ the current directory. Then run compilation."
 
 (global-set-key (kbd "C-c r") 'fd-recompile)
 (global-set-key (kbd "C-c c c") 'fd-compile)
+(global-set-key (kbd "M-g n") 'fd-next-error)
+(global-set-key (kbd "C-x `") 'fd-next-error)
+(global-set-key (kbd "M-g p") 'fd-previous-error)
 (global-set-key (kbd "M-g l") 'fd-last-error)
 (global-set-key (kbd "M-g t") 'error-end-of-trace)
+
+(defun fd-next-error (&optional arg reset)
+  (interactive)
+  (with-no-function 'read-file-name (next-error arg reset)))
+
+(defun fd-previous-error (&optional n)
+  (interactive)
+  (with-no-function 'read-file-name (previous-error n)))
 
 (defcustom error-trace-max-distance 2
   "Maximum distance between errors of a trace.")
@@ -193,5 +243,20 @@ the top."
 
 (defun fd-next-error-hook ()
   (message "Next!"))
+
+(defun add-images ()
+  (iimage-recenter))
+
+(defun fd-iimage-hook ()
+  (add-hook 'compilation-filter-hook 'add-images))
+
+(add-hook 'iimage-mode-hook 'fd-iimage-hook)
+(add-hook 'compilation-mode-hook 'turn-on-visual-line-mode)
+
+(defun compilation-send-signal (sig)
+  (interactive "nSignal to send: ")
+  (if-let ((proc (get-buffer-process (current-buffer))))
+      (signal-process proc sig)
+    (error "No process in current buffer.")))
 
 (provide 'fd-compilation)

@@ -1,4 +1,4 @@
-;; EL-GET
+1;; EL-GET
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get"))
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get/queue"))
 (setq el-get-dir (concat dotemacs-dir "el-get"))
@@ -16,7 +16,7 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
-        ;;imaxima
+        ; imaxima
         irony-mode
         sx
         tree-mode
@@ -32,8 +32,6 @@
         auctex
         idris-mode
         scala-mode
-        pdf-tools
-        org-pdfview
 
         ;; flycheck
 	;; ;; Elisp hepers
@@ -75,7 +73,6 @@
 	lua-mode
 	textile-mode
 	haskell-mode
-        structured-haskell-mode
         ghc-mod
         hs-lint
         ;; elm-mode
@@ -112,7 +109,11 @@
         web-mode
         dtrace-script-mode
         proof-general
-        emms))
+        ;emms
+        ;
+        skewer-mode
+        ein
+	))
 
 (setq
  el-get-sources
@@ -284,10 +285,6 @@
         :description "Override the shitty melpa mirror"
         :type github
         :pkgname "emacsmirror/queue")
- (:name org-pdfview
-        :description "org-link support for pdf-view-mode"
-        :type github
-        :pkgname "markus1189/org-pdfview")
  (:name emacs-w3m
        :description "A simple Emacs interface to w3m"
        :type cvs

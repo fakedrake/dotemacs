@@ -360,5 +360,4 @@ ignore buffers with."
 (setq ido-cr+-max-items 50000)
 
 (setq enable-local-variables :all)
-
 (provide 'fd-misc)
