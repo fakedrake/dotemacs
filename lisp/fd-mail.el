@@ -93,6 +93,6 @@ Web: fakedrake.github.io
 Mail: c.perivol@ed.ac.uk
 ")
 
-(add-to-list 'notmuch-saved-searches `(:name "zurich" :query "tag:zurich" :key ,(kbd "z")))
+(add-to-list 'notmuch-saved-searches `(:name "remember" :query "tag:remember" :key ,(kbd "r")))
 (setq mm-inlined-types (remove "application/zip" mm-inlined-types))
 (provide 'fd-mail)

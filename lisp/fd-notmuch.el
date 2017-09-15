@@ -9,6 +9,16 @@
                :query "tag:inbox and date:2M..today"
                :sort-order newest-first
                :notmuch-search-type t)
+        (:name "stratis"
+               :query "from:sviglas and tag:unread"
+               :key "s"
+               :sort-order newest-first
+               :search-type tree)
+        (:name "boris"
+               :query "from:boris and tag:unread"
+               :key "b"
+               :sort-order newest-first
+               :search-type tree)
         (:name "flagged"
                :key "f"
                :query "tag:flagged"
@@ -20,14 +30,6 @@
         (:name "sent"
                :key "s"
                :query "tag:sent"
-               :sort-order newest-first)
-        (:name "travis"
-               :key "t"
-               :query "tag:travis and tag:unread"
-               :sort-order newest-first)
-        (:name "e-food"
-               :key "f"
-               :query "tag:efood and tag:unread"
                :sort-order newest-first)
         (:name "eurobank"
                :key "e"
