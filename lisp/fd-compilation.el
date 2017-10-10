@@ -91,7 +91,8 @@ returns non-nil if the function is to be called."
   (file-name-as-directory
    (or (when (boundp 'compile-root) compile-root)
        (fd-project-root filename ".dir-locals.el")
-       (fd-project-root filename))))
+       (fd-project-root filename)
+       filename)))
 
 (defun fd-recompile ()
   (interactive)
@@ -118,7 +119,9 @@ the current directory. Then run compilation."
                 (read-shell-command "Compile command: "
                                     compile-command)
                 (read-directory-name "Root directory: "
-                                     (or compilation-directory default-directory))))
+                                     (fd-compilation-root
+                                      (or (buffer-file-name)
+                                          default-directory)))))
   (save-excursion
     (fd-save-compilation
      (or (fd-project-root default-directory ".dir-locals.el") default-directory)
