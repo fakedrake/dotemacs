@@ -1,4 +1,4 @@
-1;; EL-GET
+;; EL-GET
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get"))
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get/queue"))
 (setq el-get-dir (concat dotemacs-dir "el-get"))
@@ -18,6 +18,7 @@
         flycheck
         ; imaxima
         irony-mode
+        rtags
         sx
         tree-mode
         dictionary

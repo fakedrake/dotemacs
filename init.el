@@ -60,7 +60,6 @@
 (require 'fd-aspell)
 (require 'fd-idris)
 ; (require 'fd-emms)
-(require 'fd-google)
 
 (setq enable-local-variables :all)
 
@@ -84,5 +83,13 @@
  '(package-selected-packages (quote (edit-indirect)))
  '(safe-local-variable-values
    (quote
-    ((compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
+    ((compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
+     (compile-root . "/Users/drninjabatman/Scratch/tpch_2_17_0/dbgen/")
+     (compile-root . "/home/drninjabatman/Projects/FluiDB/resources/")
+     (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/")
+     (compile-root . "/Users/drninjabatman/Projects/CV-for-me/")
+     (compile-root . "/home/drninjabatman/Projects/FluiDB/tests/")
+     (compile-root . "/Users/drninjabatman/Downloads/")
+     (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/")
+     (compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
      (compile-root . "/Users/drninjabatman/Projects/advent/")))))
