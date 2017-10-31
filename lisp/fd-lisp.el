@@ -40,4 +40,12 @@
 ;; (eval-after-load "auto-complete"
 ;;   '(add-to-list 'ac-modes 'cider-repl-mode))
 
+
+;; XXX: Automatically run sbcl
+(load (expand-file-name "~/quicklisp/slime-helper.el"))
+(setq inferior-lisp-program "/usr/bin/sbcl")
+(require 'slime)
+(slime-setup '(slime-fancy slime-tramp slime-asdf))
+(slime-require :swank-listener-hooks)
+
 (provide 'fd-lisp)

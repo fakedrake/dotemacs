@@ -57,11 +57,13 @@
   (require 'shm)
 
   (setq comment-auto-fill-only-comments nil
-        haskell-process-args-stack-ghci '())
+        haskell-process-args-stack-ghci '()
+        haskell-font-lock-symbols t)
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
   (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
+  (flycheck-mode)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
   (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
@@ -115,9 +117,8 @@
             (delete-if-not 'file-exists-p full-paths)))))))
 
 (defmacro within-cabal-file (&rest body)
-  `(let ((cabal-file (haskell-cabal-find-file))
-         (testname (file-name-base (buffer-file-name))))
-     (if (or (not cabal-file)) (error "Not in haskell project.")
+  `(let ((cabal-file (haskell-cabal-find-file)))
+     (if (not cabal-file) (error "Not in haskell project.")
        (with-current-buffer (find-file-noselect cabal-file)
          ,@body))))
 
@@ -251,5 +252,20 @@ return value is the point before the = sign."
 
 (defun haskell-beginning-of-defun ()
   (save-match-data (re-seach-backwards "^[[:alnum:]]+")))
+
+(defun haskell-debug-parse-stopped-at (string)
+  "Parse the location stopped at from the given string.
+
+For example:
+
+Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
+
+"
+  (let ((index (string-match "Stopped in [^ ]+, \\([^:]+\\):\\(.+\\)\n?"
+                             string)))
+    (when index
+      (list :path (match-string 1 string)
+            :span (haskell-debug-parse-span (match-string 2 string))
+            :types (cdr (haskell-debug-split-string (substring string index)))))))
 
 (provide 'fd-haskell)

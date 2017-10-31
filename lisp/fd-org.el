@@ -5,7 +5,8 @@
 ;; (require 'org-element)
 (load-library "org")			; Requiring doesnt get the
 					; defvar for some reason
-
+                                        ;
+(require 'org)
 (setq google-translate-translation-directions-alist '(("el" . "en") ("en" . "el")))
 
 ;; Bindings

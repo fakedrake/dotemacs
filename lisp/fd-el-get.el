@@ -16,6 +16,7 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
+	memoize
         ; imaxima
         irony-mode
         sx
@@ -54,10 +55,7 @@
 	naquadah-theme
 
 	;; ido
-	ido-mode-el
-	ido-speed-hack
-	ido-better-flex
-	ido-ubiquitous
+	;; ido-completing-read+
 	smex
 
 	;; erc
@@ -123,6 +121,21 @@
 	  :description "Edit vimperator files"
 	  :type github
 	  :pkgname "xcezx/vimperator-mode")
+   (:name org-mode
+	  :description "Just my fork of org mode"
+	  :type github
+	  :pkgname "fakedrake/org-mode"
+          :info "doc"
+          :build/berkeley-unix `,(mapcar
+                                  (lambda (target)
+                                    (list "gmake" target (concat "EMACS=" (shell-quote-argument el-get-emacs))))
+                                  '("oldorg"))
+          :build `,(mapcar
+                    (lambda (target)
+                      (list "make" target (concat "EMACS=" (shell-quote-argument el-get-emacs))))
+                    '("oldorg"))
+          :load-path ("." "contrib/lisp" "lisp")
+          :load ("lisp/org-loaddefs.el"))
 
    (:name undo-tree
 	  :description "Visualize undo history as a tree"
@@ -306,4 +319,5 @@
 
 (el-get 'sync my:el-get-packages)
 
+(require 'memoize)
 (provide 'fd-el-get)

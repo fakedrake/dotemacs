@@ -82,4 +82,5 @@ string."
 
 ;; For smtp errors try using the csail server defined in fd-mail.el
 
+(setq notmuch-show-only-matching-messages nil)
 (provide 'fd-notmuch)

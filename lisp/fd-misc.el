@@ -232,7 +232,7 @@ as input replacing the buffer with the output."
           "Bury buffers under directory: ")))
   (dolist (b (buffer-list))
     (with-current-buffer b
-      (when (equal default-directory dir)
+      (when (string-prefix-p dir default-directory)
         (bury-buffer)))))
 
 

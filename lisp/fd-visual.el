@@ -64,6 +64,8 @@
          `(hl-line ((t (:background "gray25"))))
          `(ido-only-match ((t (:foreground "dark green" :bold nil))))
          `(linum ((t (:inherit default :background "#0c191C" :foreground "gray50"))))
+         `(haskell-debug-newline-face ((t (:inherit linum))))
+         `(haskell-debug-trace-number-face ((t (:inherit linum))))
 
          ;; Development
          `(font-lock-comment-face ((t (:foreground ,comment))))

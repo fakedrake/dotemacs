@@ -10,8 +10,9 @@
 
 (add-to-list 'compilation-finish-functions
              (lambda (buffer msg)
-               (save-excursion
-                 (set-buffer buffer)
-                 (refresh-iimages))))
+               (when (buffer-live-p buffer)
+                 (save-excursion
+                   (set-buffer buffer)
+                   (refresh-iimages)))))
 
 (provide 'fd-image)

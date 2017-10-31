@@ -24,8 +24,7 @@ at least one .cpp file in the same directory."
 
 (setq google-like-c-style
   '("google"
-    (c-offsets-alist
-      (access-label . [1]))))
+    (c-offsets-alist (access-label . [1]) (innamespace . [0]))))
 
 
 (defun fakedrake-cc-mode-init ()

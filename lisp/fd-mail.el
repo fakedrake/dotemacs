@@ -78,6 +78,7 @@ blocked."
   (ispell-change-dictionary (or current-input-method "english")))
 
 (defun fd-notmuch-message ()
+  (orgstruct++-mode)
   (flyspell-mode)
   (define-key notmuch-message-mode-map (kbd "M-\\") 'fd-lang-change)
   (define-key notmuch-message-mode-map (kbd "C-\\") 'fd-lang-change))

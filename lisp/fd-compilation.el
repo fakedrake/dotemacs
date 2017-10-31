@@ -2,7 +2,7 @@
 ;; Stuff related to compilation.
 (require 's)
 (require 'notifications)
-
+(defun notifications-notify (a b))
 (defun compilation-end-defun (compilation-buffer result)
   (with-current-buffer compilation-buffer
     (if (string= (buffer-name) "*compilation*")
