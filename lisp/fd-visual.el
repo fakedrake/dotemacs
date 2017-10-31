@@ -59,6 +59,7 @@
          'naquadah
          `(default ((t (:family "Ubuntu Mono" :background "#262B2C"))))
          `(mode-line ((t (:height 1.1 :background "gray30"))))
+         `(highlight ((t (:background nil :underline t :weight bold))))
          `(minibuffer-prompt ((t (:foreground "orange1"))))
          `(region ((t (:background "gray35"))))
          `(hl-line ((t (:background "gray25"))))

@@ -54,11 +54,11 @@
   "Some extras for haskell-mode."
   :lighter " DNB-Haskell"
   :keymap drninjabatmans-haskell-mode-map
-  (require 'shm)
-
   (setq comment-auto-fill-only-comments nil
-        haskell-process-args-stack-ghci '()
-        haskell-font-lock-symbols t)
+        haskell-font-lock-symbols t
+        haskell-process-args-stack-ghci nil)
+  (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
+    (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
   (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
@@ -75,16 +75,51 @@
   ;; (structured-haskell-mode t)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-e") 'shm/goto-parent-end)
-  (message "Using drninjabatman's haskell mode!"))
+  )
+(defvar-local haskell-tags-file-dir nil)
+(fset 'haskell-cabal--find-tags-dir-old (symbol-function 'haskell-cabal--find-tags-dir))
+(defun haskell-cabal--find-tags-dir ()
+  "Override the tags path"
+  (or haskell-tags-file-dir (funcall 'haskell-cabal--find-tags-dir-old)))
 
 (defun haskell-jump-src-to-test ()
+  "Being in source jump th the corresponding test"
   (interactive)
-  (let ((cabal-file (haskell-cabal-find-file)))
-    (if (not cabal-file) (error "Not in haskell project.")
-      (let ((test-fname (concat (file-name-directory cabal-file)
-                                "tests/"
-                                (file-name-nondirectory (buffer-file-name)))))
-        (find-file test-fname)))))
+  (find-file (haskell-corresponding-test (buffer-file-name))))
+
+(defun haskell-corresponding-test (path)
+  "Find a corresponding test file. If the cabal file is
+/a/test.cabal and path is /a/b/c/d/e/f.hs we will try in order:
+/a/tests/b/c/f.hs /a/tests/b/f.hs, /a/tests/f.h,
+/a/tests/b/c/d/f.hs, /a/tests/b/c/f.hs, ..."
+  (if-let ((cabal-file (haskell-cabal-find-file)))
+      (let* ((cabal-dir (file-name-directory cabal-file))
+             (nondir (file-name-nondirectory path))
+             (subpath (save-match-data
+                         (split-string
+                          (replace-regexp-in-string
+                           cabal-dir ""
+                           (directory-file-name
+                            (file-name-directory path)))
+                          "/")))
+             (rsubpath (reverse subpath))
+             (retfn (lambda (x) (concat cabal-dir
+                                   "tests/"
+                                   (mapconcat 'identity x "/")
+                                   (if x "/" "") nondir)))
+
+             ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
+             (defret (funcall retfn subpath))
+             (ret (funcall retfn subpath)))
+        ;; Reduce subpath until it's null then reduce rsubpath.
+        (while (and rsubpath (not (file-exists-p ret)))
+          (if (not subpath)
+              (setq rsubpath (cdr rsubpath)
+                    subpath (reverse rsubpath))
+            (setq subpath (cdr subpath)))
+          (setq ret (funcall retfn subpath)))
+        (if rsubpath ret defret))
+    (error "Not in a cabal project.")))
 
 (defun move-keymap-to-top (mode)
   (let ((map (assq mode minor-mode-map-alist)))
@@ -253,6 +288,7 @@ return value is the point before the = sign."
 (defun haskell-beginning-of-defun ()
   (save-match-data (re-seach-backwards "^[[:alnum:]]+")))
 
+
 (defun haskell-debug-parse-stopped-at (string)
   "Parse the location stopped at from the given string.
 
@@ -267,5 +303,110 @@ Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
       (list :path (match-string 1 string)
             :span (haskell-debug-parse-span (match-string 2 string))
             :types (cdr (haskell-debug-split-string (substring string index)))))))
+
+(add-to-list 'haskell-font-lock-keywords "forall")
+
+;; Copy the current function in foo and replace the global type
+;; variables with concrete types.d
+;;
+;; (with-current-buffer "EquivCls.hs"
+;;   (save-restriction
+;;     (narrow-to-defun)
+;;     (let ((fun-body (buffer-string)))
+;;       (with-current-buffer "foo"
+;;         (delete-region (point-min) (point-max))
+;;         (insert fun-body)
+;;         ;; List of lists of typevars
+;;         (let ((typevars
+;;                (let* ((arg-rx " *\\([[:alnum:]']+\\) *")
+;;                       (funcall-rx (concat ":: forall *\\(\\(" arg-rx "\\)+ \\) *\.")))
+;;                  (goto-char (point-min))
+;;                  (let (ret)
+;;                    ;; Find each function call
+;;                    (while (search-forward-regexp funcall-rx nil t)
+;;                      (add-to-list
+;;                       'ret
+;;                       ;;Narrow to call and get arguments
+;;                       (save-restriction
+;;                         (narrow-to-region (match-beginning 1) (match-end 1))
+;;                         (goto-char (point-min))
+;;                         (let (ret)
+;;                           (save-match-data
+;;                             (while (search-forward-regexp arg-rx nil t)
+;;                               ;; Get each argument
+;;                               (add-to-list 'ret
+;;                                            (buffer-substring-no-properties
+;;                                             (match-beginning 1) (match-end 1))))
+;;                             (reverse ret))))))
+;;                    (delete-region (match-beginning 0) (match-end 0))
+;;                    (reverse ret))))
+;;               ;; Transformation of typevars
+;;               (typevar-trans (mapcar (lambda (x) (cons (concat "\\<" x "\\>")
+;;                                                   (concat "(TypeVar " x ")")))
+;;                                      (car typevars)))
+;;               (type-regions (let (ret)
+;;                               (save-match-data
+;;                                 (while (search-forward-regexp "::\\(\\(.\\|\n\\)*?\\)=" nil t)
+;;                                   (add-to-list 'ret (cons (match-beginning 1) (match-end 1))))
+;;                                 (reverse ret)))))
+;;           (dolist (l type-regions)
+;;             (save-restriction
+;;               (narrow-to-region (car l) (cdr l))
+;;               (dolist (trans typevar-trans)
+;;                 (replace-regexp (car trans) (cdr trans))))))))))
+
+
+;; start tensorflow: (let ((session '((name . "tensorflow") (cabal-dir . "/Users/drninjabatman/Scratch/haskell/")))) (setq haskell-sessions (list session)) (switch-to-buffer "*haskell-process-log*") (haskell-process-start (setq haskell-session session))))
+
+;; OVERRIDE
+(defun haskell-session-interactive-buffer (s)
+  "Get the session interactive buffer."
+  (let ((buffer (haskell-session-get s 'interactive-buffer)))
+    (if (and buffer (buffer-live-p buffer))
+        buffer
+      (let ((buffer-name (format "*%s*" (haskell-session-name s)))
+            (index 0))                  ;CHANGE HERE
+        (while (get-buffer buffer-name)
+          (setq buffer-name (format "*%s <%d>*" (haskell-session-name s) index))
+          (setq index (1+ index)))
+        (let ((buffer (get-buffer-create buffer-name)))
+          (haskell-session-set-interactive-buffer s buffer)
+          (with-current-buffer buffer
+            (haskell-interactive-mode)
+            (haskell-session-assign s))
+          (haskell-interactive-switch)
+          buffer)))))
+
+(defun stack-root (dir-root)
+  (let* ((dir (abbreviate-file-name dir-root))
+         (user (nth 2 (file-attributes dir))))
+    ;; Look for the first dir that contains stack.yaml or does not
+    ;; belong to the user
+    (while (and dir
+                (not (file-exists-p (concat dir "/stack.yaml")))
+                (= user (nth 2 (file-attributes dir))))
+      (setq dir (let ((next (file-name-directory (directory-file-name dir))))
+                  (unless (string= dir next) next))))
+    (or dir dir-root)))
+
+(defun tensorflow-haskell-run-session (dir-root)
+  "Run a session for the tensorflow project."
+  (interactive
+   (list
+    (directory-file-name
+     (read-directory-name
+      "Project root: " (stack-root default-directory)))))
+
+  (let* ((session-name (file-name-base dir-root))
+         (session (list (cons 'name session-name)
+                        (cons 'cabal-dir dir-root))))
+    (when (cl-notany
+           (lambda (s) (string= (haskell-session-name s) session-name))
+           haskell-sessions)
+      (add-to-list 'haskell-sessions session)
+      (setq haskell-process-check-cabal-config-on-load nil
+            haskell-process-log t)
+      (haskell-process-start (setq haskell-session session))
+      (switch-to-buffer  "*haskell-process-log*"))))
 
 (provide 'fd-haskell)

@@ -31,6 +31,18 @@ keep, defaults to 1."
       (cons (match-string (or group 0) string)
 	    (re-find-all regex string group (match-end (or group 0)))))))
 
+(flet ((arg (x) (format "\\(?:[[:space:]\n]*%s[[:space:]]*\\(?:,\\|$\\)\\)" x)))
+  (setq python-symbol-rx "\\(?1:\\**[a-zA-Z_][a-zA-Z0-9_]*\\)"
+        python-args-rx (arg python-symbol-rx)
+        python-kw-rx (arg (format "\\(?:%s[[:space:]]*=[[:space:]]*\\(?2:.*?\\|(.*)\\)\\)"
+                                  python-symbol-rx))
+        python-variant-args-rx (arg (format "\\*%s" python-args-rx))
+        python-variant-kw-rx (arg (format "\\*%s" python-variant-args-rx))
+        python-func-rx
+        (format
+         "^[[:space:]]*def[[:space:]]+%s[[:space:]]*(\\(\\(?:.\\|,\n\\)*\\)):"
+         python-symbol-rx)))
+
 (defun fd-yas-python-methodargs ()
   "This dumb functions sees the arguments of the python function
 we are in and returns a list of arguments and kwargs (:args (arg1
@@ -40,31 +52,113 @@ are lists, sets, strings with parens and commas or anything that
 looks like argument list delim but is context sensitive."
   (save-match-data
     (save-excursion
-      (let* ((kwargs-rx "[,(][[:space:]]*\\([a-zA-Z0-9_]+\\)[[:space:]]*=[[:space:]]*\\(.*?\\)[,)]")
-	     (args-rx "[,(][[:space:]]*\\([a-zA-Z0-9_]+\\)[[:space:]]*[,)]")
-	     (sargs (if (re-search-backward
-			 "def .*\\((\\(self[[:space:]]*,\\)?[[:space:]]*.*)\\):" nil t)
-			(match-string-no-properties 1)
-		      (error "Function not found.")))
-	     (args (re-find-all args-rx sargs 1))
-	     (kwargs (mapcar* 'cons
-			      (re-find-all kwargs-rx sargs 1)
-			      (re-find-all kwargs-rx sargs 2))))
-	(list :args (remove-if (lambda (x) (string= x "self")) args) :kwargs kwargs)))))
+      (let* ((sargs (if (re-search-backward
+                         python-func-rx
+                         (save-excursion (beginning-of-defun) (point)) t)
+                        (match-string-no-properties 2)
+                      (error "Function not found")))
+             (args) (kwargs) (start))
+        (save-match-data
+          (while (string-match (format "\\(?:\\(?3:%s\\)\\|\\(?4:%s\\)\\)"
+                                       python-kw-rx python-args-rx)
+                               sargs start)
+            (setq start (match-end 0))
+            (if (match-string 4 sargs)
+                (add-to-list 'args (match-string 1 sargs))
+              (if (match-string 3 sargs)
+                  (add-to-list 'kwargs (cons (match-string 1 sargs) (match-string 2 sargs)))
+                (error "Unreached")))))
+        (list :args (reverse (remove-if (lambda (x) (string= x "self")) args))
+              :kwargs (reverse kwargs))))))
 
-(defun  yas-sphinx-docstring (fnargs-plist &optional offset)
+(defun python-default-variable-doc (name &optional value)
+  "Make a bad doc based on the NAME and the default VALUE."
+  (let ((human-name
+         (replace-regexp-in-string
+          "_" " " (string-remove-prefix "*" (string-remove-prefix "*" name)))))
+    (concat
+     (cond ((or (string-prefix-p "use_" name)
+                (string-prefix-p "make_" name))
+            human-name)
+           ((or (string-prefix-p "is_" name)
+                (string-prefix-p "has_" name))
+            (concat "Whether " human-name))
+           ((string-suffix-p "ed" name) (concat "If need be " human-name))
+           (t (concat "The " human-name)))
+     (if value (format " (default: %s)" value) ""))))
+
+(defun python-docstring-type ()
+  (save-match-data
+    (save-excursion
+      (if (re-search-backward "^\s*\\(class\\|def\\) " nil t)
+          (pcase (match-string-no-properties 1)
+            ('"class" 'class)
+            ('"def" 'def)
+            (_ (error "Unreached")))
+        'module))))
+
+(defun python-function-raises ()
+  "Return all the raised types."
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (narrow-to-defun)
+        (goto-char (point-min))
+        (let ((ret))
+          (while (re-search-forward "^\s*raise\s+\\([[:alnum:]]+\\)" nil t)
+            (add-to-list 'ret (match-string 1)))
+          (reverse ret))))))
+
+(defun python-function-returns ()
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (narrow-to-defun)
+        (goto-char (point-min))
+        (re-search-forward "^\s*return\s+." nil t)))))
+
+(defun python-function-yields ()
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (narrow-to-defun)
+        (goto-char (point-min))
+        (re-search-forward "^\s*yield\s+." nil t)))))
+
+(defun  yas-python-docstring-def (fnargs-plist &optional offset)
   "Gets a plust like the one fd-yas-python-methodargs and maybe
 an offset for pspaces and returns a sphinx readable template for
 sphinx describing the arguments."
   (let* ((spaces (make-string (or offset 0) (string-to-char " ")))
-	 (args (mapconcat (lambda (p) (format "%s:param %s: " spaces p))
-			  (plist-get fnargs-plist :args) "\n"))
-	 (kwargs (mapconcat (lambda (p) (format "%s:param %s: "
-						spaces (car p)))
-			    (plist-get fnargs-plist :kwargs) "\n")))
-    (format "%s%s:returns: "
-	    (if (string= args "") "" (concat args "\n"))
-	    (if (string= kwargs "") "" (concat kwargs "\n")))))
+         (spaces+2 (make-string (+ 2 (or offset 0)) (string-to-char " ")))
+         (args (mapcar (lambda (p) (format "%s%s: %s\n"
+                                      spaces+2 p (python-default-variable-doc p)))
+                       (plist-get fnargs-plist :args)))
+         (kwargs (mapcar (lambda (p) (format "%s%s: (Optional) %s\n"
+                                        spaces+2 (car p)
+                                        (python-default-variable-doc
+                                         (car p) (cdr p))))
+                         (plist-get fnargs-plist :kwargs)))
+         (all-args (append args kwargs)))
+    (concat
+     ;; Add an Args: section
+     (if all-args
+         (format "%sArgs:\n%s" spaces (apply 'concat all-args))
+       "")
+     ;; Add a Returns: section
+     (if (python-function-returns) (format "\nReturns:\n%s\n" spaces+2) "")
+     (if (python-function-yields) (format "\nYields:\n%s\n" spaces+2) "")
+     ;; Add a Raises section
+     (if-let ((errs (python-function-raises)))
+         (format "\nRaises:\n%s\n"
+                 (mapconcat (lambda (x) (concat spaces+2 x ":")) errs "\n"))
+       ""))))
+(defvar python-default-licence "")
+(defun yas-python-docstring (type)
+  (pcase type
+    ('module (concat python-default-licence ""))
+    ('class "")
+    ('def (concat "\n\n" (yas-python-docstring-def (fd-yas-python-methodargs))))))
 
 (defvar fd-debug-message-title "DRNINJABATAN"
   "This is set as the toplevel tag in the snippet of debug
@@ -79,9 +173,9 @@ sphinx describing the arguments."
       (re-find-all
        (format "\\([a-zA-Z0-9_]+\\)[[:space:]]*%s" regex)
        (buffer-substring-no-properties
-	(point)
-	(if (and until-rx (re-search-forward until-rx))
-	    (match-end 0) point-max))
+        (point)
+        (if (and until-rx (re-search-forward until-rx nil t))
+            (match-end 0) point-max))
        1))))
 
 (defun last-sym-before (regex)

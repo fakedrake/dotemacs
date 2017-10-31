@@ -23,14 +23,28 @@ at least one .cpp file in the same directory."
     (c++-mode)))
 
 (setq google-like-c-style
+
   '("google"
     (c-offsets-alist (access-label . [1]) (innamespace . [0]))))
 
+(defun rtags-eldoc-function ()
+  (let* ((symbol (rtags-symbol-info-internal
+                  :location (or (rtags-target-declaration-first)
+                                (rtags-current-location))
+                  :silent t))
+         (symbol-text (cdr (assoc 'contents
+                                  (rtags-get-file-contents
+                                   :info symbol
+                                   :maxlines (or 1 5))))))
+    (when symbol symbol-text)))
 
 (defun fakedrake-cc-mode-init ()
   "Just some initializations I need for C"
   (rainbow-delimiters-mode)
   (c++-to-headers-mode)
+  (irony-mode)
+  (setq eldoc-documentation-function 'rtags-eldoc-function)
+  (flycheck-mode)
   (mapc
    (function
     (lambda (sym)

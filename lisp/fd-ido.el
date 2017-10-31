@@ -1,6 +1,7 @@
 
 ;; Ido mode
 (require 'ido)
+
 (ido-mode t)
 (setq ido-save-directory-list-file (my-expand-path ".ido.last"))
 (setq ido-auto-merge-work-directories-length -1)

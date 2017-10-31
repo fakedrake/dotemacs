@@ -19,6 +19,7 @@
 	memoize
         ; imaxima
         irony-mode
+        rtags
         sx
         tree-mode
         dictionary
@@ -71,7 +72,6 @@
 	lua-mode
 	textile-mode
 	haskell-mode
-        structured-haskell-mode
         ghc-mod
         hs-lint
         ;; elm-mode
@@ -109,6 +109,9 @@
         dtrace-script-mode
         proof-general
         ;emms
+        ;
+        skewer-mode
+        ein
 	))
 
 (setq

@@ -1,4 +1,4 @@
-; Python
+;; Python
 
 (require 'python)
 ;; (defun py-my-indent-region (&optional min max)
@@ -22,6 +22,7 @@
   (define-key python-mode-map (kbd "C-c M-t") 'fd-python-run-tests)
   (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
   (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
+  (define-key python-mode-map (kbd "M-q") 'python-smart-fill-paragraph)
   (local-unset-key (kbd "<backtab>"))
   (setq jedi:setup-function nil
         jedi:mode-function nil)
@@ -29,7 +30,7 @@
   (add-to-list 'company-backends 'company-jedi)
   ;; Fix docstring paragraph filling
   (setq paragraph-start (concat paragraph-start "\\|\\s-*\"\"\".*$")
-        python-fill-docstring-style 'django))
+        python-fill-docstring-style 'pep-257))
 
 (add-hook 'python-mode-hook 'my/python-mode-hook)
 (setq jedi:setup-keys t)
@@ -255,7 +256,7 @@ of hook."
 		  (ediff-cleanup-mess)
 		  (kill-buffer buf2)
 		  (set-window-configuration config))
-      nil t))))
+                nil t))))
 
 
 (defun my-python-send-buffer ()
@@ -264,9 +265,95 @@ of hook."
    "__package__ = '%s';import '%s'; from ppring import pprint as pp")
   (call-interactively (python-shell-send-buffer)))
 
+
 (defun fd-ein:hook ()
   (define-key ein:notebook-mode-map (kbd "C-c r") 'ein:worksheet-execute-all-cell))
 
+(defun indent-lines-to (beg end column)
+  (save-excursion
+    (goto-char beg)
+    (forward-line)
+    (while (< (point) end)
+      (delete-region (progn (beginning-of-line) (point)) (progn (back-to-indentation) (point)))
+      (indent-to column)
+      (forward-line))))
+
+(defun python-smart-fill-paragraph (&optional justify region)
+  (interactive)
+  (if (null (python-info-docstring-p))
+      (fill-paragraph justify region)
+    (let ((paragraph-start "\\(^\\(?2:\s+\\)\\(?3:\\**[[:alnum:]_]+\\):\\|\n\s*\n\\|^\s*- \\)"))
+      (fill-paragraph justify region)
+      (save-match-data
+        (save-excursion
+          (when (and (re-search-backward paragraph-start nil t)
+                     (save-match-data (looking-at "^\s+[[:alnum:]_]+:")))
+            (let ((spaces (match-string 2))
+                  (word (match-string 3)))
+              ;; Return and Raises are special cases
+              (when (or (string= word "Returns")
+                        (string= word "Raises")
+                        (string= word "Yields"))
+                (search-forward ":" nil t)
+                (insert "\n") (backward-char))
+              (let ((rbeg (save-excursion (end-of-line) (point)))
+                    (rend (save-excursion (end-of-paragraph-text) (point))))
+                (indent-lines-to rbeg rend (+ 2 (length spaces)))
+                (fill-region rbeg rend)))))))))
+
+(defun fd-python-indent-line-function (pyfun)
+  (if (and (python-info-docstring-p) (not (looking-at "\"\"\"")))
+      (if (looking-back "^\s*\\(Returns\\|Raises\\|Args\\|Yields\\):\s*\n\s*")
+          (progn (indent-relative-maybe) (insert "  "))
+        (indent-relative))
+    (funcall pyfun)))
+(advice-add 'python-indent-line-function
+            :around #'fd-python-indent-line-function)
+
 (add-hook 'ein:notebook-mode-hook 'fd-ein:hook)
 
+(defun python-path-of (dir-path)
+  (let ((path (concat (file-name-as-directory dir-path)))
+        (ret))
+    (while (and (not (string= path "/"))
+                (not (string= path ""))
+                (file-exists-p (concat path "__init__.py")))
+      (add-to-list 'ret (file-name-base (directory-file-name path)))
+      (setq path (file-name-directory (directory-file-name path))))
+    (mapconcat 'identity ret ".")))
+
+(defun region-to-module (start end &optional filename should-append)
+  "Try moving region to module."
+  (save-excursion
+    (save-match-data
+      (goto-char start)
+      (unless (re-search-forward "^class \\([A-Z][[:alnum:]]*\\)" end t)
+        (error (format "No class in region (%d %d)" start end)))
+      (let* ((class-name (match-string-no-properties 1))
+             (class-start (match-beginning 0))
+             (class-end (progn (end-of-defun) (point)))
+             (class-body (buffer-substring class-start class-end))
+             (class-filename (or filename (format "./%s.py" (downcase class-name))))
+             (pypath (python-path-of (file-name-directory (buffer-file-name))))
+             (orig-buf (current-buffer)))
+        ;; Stop if anything starts from beginning of line
+        (when (re-search-forward "^[^[:space:]]" class-end t)
+          (error (format "Malformed class %s" class-name)))
+        (find-file-other-window class-filename)
+        (when (and (not should-append) (file-exists-p class-filename))
+          (error (format "File %s already exists." class-filename)))
+        (goto-char (point-max))
+        (insert (concat "\n\n" class-body))
+        (with-current-buffer orig-buf
+          (delete-region class-start class-end)
+          ;; Import the new file
+          (goto-char
+           (or (re-search-backward "^\\(import\\|from\\) .*\n" nil t) (point-min)))
+          (insert (format "from %s.%s import %s\n" pypath (file-name-base class-filename) class-name)))
+        (message "Remember to update the build file.")))))
+
+(require 'ein)
+(require 'ein-loaddefs)
+(require 'ein-notebook)
+(require 'ein-subpackages)
 (provide 'fd-python)

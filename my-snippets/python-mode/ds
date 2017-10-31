@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-# name: docstring
+# name: docstring method
 # key: ds
 # expand-env: ((yas-indent-line 'fixed))
 # --
-"""
-$0
-"""
+"""$0`(yas-python-docstring (python-docstring-type))`"""
