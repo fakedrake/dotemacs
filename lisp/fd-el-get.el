@@ -18,6 +18,8 @@
         flycheck
 	memoize
         ; imaxima
+        org-caldav
+        oauth2
         irony-mode
         rtags
         sx
