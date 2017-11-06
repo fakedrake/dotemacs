@@ -257,7 +257,7 @@ the top."
 
 (defun compilation-send-signal (sig)
   (interactive "nSignal to send: ")
-  (if-let ((proc (get-buffer-process (current-buffer))))
+  (if-let* ((proc (get-buffer-process (current-buffer))))
       (signal-process proc sig)
     (error "No process in current buffer.")))
 

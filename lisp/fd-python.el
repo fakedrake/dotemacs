@@ -352,8 +352,8 @@ of hook."
           (insert (format "from %s.%s import %s\n" pypath (file-name-base class-filename) class-name)))
         (message "Remember to update the build file.")))))
 
-(require 'ein)
-(require 'ein-loaddefs)
-(require 'ein-notebook)
-(require 'ein-subpackages)
+;; (require 'ein)
+;; (require 'ein-loaddefs)
+;; (require 'ein-notebook)
+;; (require 'ein-subpackages)
 (provide 'fd-python)

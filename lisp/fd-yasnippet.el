@@ -149,7 +149,7 @@ sphinx describing the arguments."
      (if (python-function-returns) (format "\nReturns:\n%s\n" spaces+2) "")
      (if (python-function-yields) (format "\nYields:\n%s\n" spaces+2) "")
      ;; Add a Raises section
-     (if-let ((errs (python-function-raises)))
+     (if-let* ((errs (python-function-raises)))
          (format "\nRaises:\n%s\n"
                  (mapconcat (lambda (x) (concat spaces+2 x ":")) errs "\n"))
        ""))))

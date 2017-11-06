@@ -68,7 +68,7 @@
   (auto-complete-mode -1)
   (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
                                         ; (ghc-init)
-  (if-let ((adv (assq 'ghc-check-syntax-on-save
+  (if-let* ((adv (assq 'ghc-check-syntax-on-save
                       (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
                                         ; (set-face-attribute 'shm-current-face nil :background nil)
@@ -92,7 +92,7 @@
 /a/test.cabal and path is /a/b/c/d/e/f.hs we will try in order:
 /a/tests/b/c/f.hs /a/tests/b/f.hs, /a/tests/f.h,
 /a/tests/b/c/d/f.hs, /a/tests/b/c/f.hs, ..."
-  (if-let ((cabal-file (haskell-cabal-find-file)))
+  (if-let* ((cabal-file (haskell-cabal-find-file)))
       (let* ((cabal-dir (file-name-directory cabal-file))
              (nondir (file-name-nondirectory path))
              (subpath (save-match-data
@@ -244,7 +244,7 @@
   "Look for the last function declaration before the point. If
 there is a definion alread jump to that. If not insert one."
   (interactive)
-  (if-let ((decl-pos (save-excursion
+  (if-let* ((decl-pos (save-excursion
                        (end-of-line)
                        (haskell-previous-declaration-search)))
            (fun-name (match-string 1))

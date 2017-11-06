@@ -1,6 +1,4 @@
-(require 'gh)
-
-                                        ; (setq fd-github-api (gh-issues-api "emacs-stuff"))
+; (setq fd-github-api (gh-issues-api "emacs-stuff"))
 (defvar fd-github-api  nil)
 
 (defmethod gh-issues-issue-list-all ((api gh-issues-api) user repo)
@@ -35,7 +33,6 @@
 (define-key magit-file-mode-map (kbd "C-x G") 'magit-status)
 
 ;; Define faces.
-
 (defface my/mode:vc-added
   `(
     (  ((class color))

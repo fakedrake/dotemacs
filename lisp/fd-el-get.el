@@ -21,7 +21,7 @@
         org-caldav
         oauth2
         irony-mode
-        rtags
+        ; rtags
         sx
         tree-mode
         dictionary
@@ -44,14 +44,10 @@
 
 	;; Python
 	python
-	; django-mode ; snippets get fucked up
 	company-jedi
-	;; ein
 
 	;; Auto Complete packages
 	yasnippet
-        ; auto-yasnippet
-	; auto-complete
         company-mode
 
 	;; themes I like
@@ -63,46 +59,33 @@
 
 	;; erc
 	erc-highlight-nicknames
-	; erc-image
 
 	;; Misc
-        ;; slime
-	;; helm
-	;; nxhtml ; this is obsolete crap, stay away.
-	;; realgud ; Can't install test-simple
-	; twiki-mode ; problem with dependency
 	lua-mode
 	textile-mode
 	haskell-mode
         ghc-mod
         hs-lint
-        ;; elm-mode
 	js2-mode
 	coffee-mode
-        ;; flymake-coffee-load
         flymake-jslint
 	json-mode
 	graphviz-dot-mode
         queue
 	cider
-	; ac-nrepl
 	clojure-mode
         nodejs-repl
-	;; cscope
 	cmake-mode
 	multi-term
 	yaml-mode
 	vimperator-mode
 	c-eldoc
-	;; sort
-	;; hide-region
 	gist
 	org-mode
         org-trello
         cdlatex-mode
 	markdown-mode
 	ggtags
-	;git-emacs
 	magit
 	bm
 	compilation-setup
@@ -110,8 +93,6 @@
         web-mode
         dtrace-script-mode
         proof-general
-        ;emms
-        ;
         skewer-mode
         ein
 	))
