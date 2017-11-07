@@ -23,6 +23,10 @@
       (haskell-process-file-loadish cmd nil buf)
       (delete-file tmp))))
 
+(add-to-list
+ 'haskell-compilation-error-regexp-alist
+ '("^Stopped in [^ \t\r\n]+, \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\)$" 1 2 (3 . 4) 0))
+
 (defvar hs-compilation-error-regex-alist
   ;; REGEX FILE-GROUP LINE-GROUP COLUMN-GROUP ERROR-TYPE LINK-GROUP
   '((haskell-error
@@ -43,6 +47,7 @@
 (require 'haskell-mode)
 (defvar drninjabatmans-haskell-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-x SPC") 'gud-break)
     (define-key map (kbd "C-c C-l") 'haskell-process-load-file-and-then-imports)
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
     (define-key map (kbd "C-c C-i") 'haskell-jump-to-or-insert-defininition)
@@ -69,7 +74,7 @@
   (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
                                         ; (ghc-init)
   (if-let* ((adv (assq 'ghc-check-syntax-on-save
-                      (ad-get-advice-info-field #'save-buffer 'after))))
+                       (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
                                         ; (set-face-attribute 'shm-current-face nil :background nil)
   ;; (structured-haskell-mode t)
@@ -96,19 +101,19 @@
       (let* ((cabal-dir (file-name-directory cabal-file))
              (nondir (file-name-nondirectory path))
              (subpath (save-match-data
-                         (split-string
-                          (replace-regexp-in-string
-                           cabal-dir ""
-                           (directory-file-name
-                            (file-name-directory path)))
-                          "/")))
+                        (split-string
+                         (replace-regexp-in-string
+                          cabal-dir ""
+                          (directory-file-name
+                           (file-name-directory path)))
+                         "/")))
              (rsubpath (reverse subpath))
              (retfn (lambda (x) (concat cabal-dir
-                                   "tests/"
-                                   (mapconcat 'identity x "/")
-                                   (if x "/" "") nondir)))
+                                        "tests/"
+                                        (mapconcat 'identity x "/")
+                                        (if x "/" "") nondir)))
 
-             ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
+                                        ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
              (defret (funcall retfn subpath))
              (ret (funcall retfn subpath)))
         ;; Reduce subpath until it's null then reduce rsubpath.
@@ -245,13 +250,13 @@
 there is a definion alread jump to that. If not insert one."
   (interactive)
   (if-let* ((decl-pos (save-excursion
-                       (end-of-line)
-                       (haskell-previous-declaration-search)))
-           (fun-name (match-string 1))
-           (def-pos (or (haskell-find-definition fun-name decl-pos)
-                        (progn
-                          (haskell-make-available-line)
-                          (haskell-insert-function-stump fun-name)))))
+                        (end-of-line)
+                        (haskell-previous-declaration-search)))
+            (fun-name (match-string 1))
+            (def-pos (or (haskell-find-definition fun-name decl-pos)
+                         (progn
+                           (haskell-make-available-line)
+                           (haskell-insert-function-stump fun-name)))))
       (goto-char def-pos)))
 
 (defun haskell-make-available-line ()
@@ -408,5 +413,182 @@ Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
             haskell-process-log t)
       (haskell-process-start (setq haskell-session session))
       (switch-to-buffer  "*haskell-process-log*"))))
+
+
+;; GUD
+;;
+;; M-x gud-ghci<RET>stack ghci --is-main fluidb:exe:sql2cpp
+
+(defun gud-display-frame ()
+  "Find and obey the last filename-and-line marker from the debugger.
+Obeying it means displaying in another window the specified file and line."
+  (interactive)
+  (when gud-last-frame
+    (gud-set-buffer)
+    ;; gud-last-frame => (file . line)
+    (cond
+     ((not (listp (cdr gud-last-frame)))
+      (gud-display-line (car gud-last-frame) (cdr gud-last-frame)))
+     ;; gud-last-frame => (file line begin-column end-column)
+     ((and
+       (= 4 (length gud-last-frame))
+       (every #'numberp (cdr gud-last-frame)))
+      (let ((file (car gud-last-frame))
+            (line (cadr gud-last-frame))
+            (expr-begin-col (caddr gud-last-frame))
+            (expr-end-col  (cadddr gud-last-frame)))
+        (gud-display-line file line)
+        (pulse-momentary-highlight-region
+         (save-excursion (beginning-of-line) (forward-char expr-begin-col) (point))
+         (save-excursion (beginning-of-line) (forward-char expr-end-col) (point)))))
+     ;; TODO: gud-last-frame => (file (begin-line . begin-column) (end-line . end-column))
+     ;; Anything else
+     (t (error "Unknown gud-last-frame format.")))
+    (setq gud-last-last-frame gud-last-frame
+	  gud-last-frame nil)))
+
+(defun gud-ghci-marker-filter (string)
+  (setq gud-marker-acc (if gud-marker-acc (concat gud-marker-acc string) string))
+
+  (let (start)
+    ;; Process all complete markers in this chunk.
+    (while (string-match
+		"\\(Logged breakpoint at\\|Stopped in [^ \t\r\n]+,\\) \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\)"
+		gud-marker-acc start)
+      (setq gud-last-frame
+	    (list (match-string 1 gud-marker-acc)
+		  (string-to-number (match-string 2 gud-marker-acc))
+                  (string-to-number (match-string 3 gud-marker-acc))
+                  (string-to-number (match-string 3 gud-marker-acc)))
+	    start (match-end 0)))
+
+    ;; Search for the last incomplete line in this chunk
+    (while (string-match "\n" gud-marker-acc start)
+      (setq start (match-end 0)))
+
+    ;; If the incomplete line APPEARS to begin with another marker, keep it
+    ;; in the accumulator.  Otherwise, clear the accumulator to avoid an
+    ;; unnecessary concat during the next call.
+    (setq gud-marker-acc (substring gud-marker-acc (match-beginning 0))))
+  string)
+
+(defun gud-ghci (command-line)
+  (interactive (list (gud-query-cmdline 'gud-ghci)))
+  (when (and gud-comint-buffer
+	     (buffer-name gud-comint-buffer)
+	     (get-buffer-process gud-comint-buffer)
+	     (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
+    (gdb-restore-windows)
+    (error
+     "Multiple debugging requires restarting in text command mode"))
+
+  (gud-common-init command-line nil 'gud-ghci-marker-filter)
+  (setq-local gud-minor-mode 'ghci)
+  (setq paragraph-start comint-prompt-regexp)
+  (comint-send-string (get-buffer-process (current-buffer))
+                      ":set prompt \"> \"\n:print '\\n'\n")
+  (setq comint-prompt-regexp "^> ")
+
+  (gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
+  (gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
+  (gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
+  (gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
+  (gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
+  (gud-def gud-up     ":back"           "<" "Up one stack frame.")
+  (gud-def gud-down   ":forward"        ">" "Down one stack frame.")
+  (gud-def gud-run    ":trace %e"       "t" "Trace expression.")
+  (gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
+  (run-hooks 'gud-ghci-mode-hook))
+
+(defvar gud-ghci-command-name "stack repl")
+
+
+(defun gud-format-command (str arg)
+  (let ((insource (not (eq (current-buffer) gud-comint-buffer)))
+	(frame (or gud-last-frame gud-last-last-frame))
+	(buffer-file-name-localized
+         (and (buffer-file-name)
+              (file-local-name (buffer-file-name))))
+	result)
+    (while (and str
+		(let ((case-fold-search nil))
+		  (string-match "\\([^%]*\\)%\\([adefFlpcmy]\\)" str)))
+      (let ((key (string-to-char (match-string 2 str)))
+	    subst)
+	(cond
+	 ((eq key ?f)
+	  (setq subst (file-name-nondirectory (if insource
+						  buffer-file-name-localized
+						(car frame)))))
+	 ((eq key ?F)
+	  (setq subst (file-name-base (if insource
+                                          buffer-file-name-localized
+                                        (car frame)))))
+	 ((eq key ?d)
+	  (setq subst (file-name-directory (if insource
+					       buffer-file-name-localized
+					     (car frame)))))
+	 ((eq key ?l)
+	  (setq subst (int-to-string
+		       (if insource
+			   (save-restriction
+			     (widen)
+			     (+ (count-lines (point-min) (point))
+				(if (bolp) 1 0)))
+			 (cdr frame)))))
+	 ((eq key ?e)
+	  (setq subst (gud-find-expr)))
+	 ((eq key ?a)
+	  (setq subst (gud-read-address)))
+	 ((eq key ?c)
+	  (setq subst
+                (gud-find-class
+                 (if insource
+                     (buffer-file-name)
+                   (car frame))
+                 (if insource
+                     (save-restriction
+                       (widen)
+                       (+ (count-lines (point-min) (point))
+                          (if (bolp) 1 0)))
+                   (cdr frame)))))
+	 ((eq key ?p)
+	  (setq subst (if arg (int-to-string arg))))
+
+         ;; My additions here
+         ((eq key ?m)
+          (setq subst
+                (gud-find-module
+                 (if insource
+                     (buffer-file-name)
+                   (car frame))
+                 (if insource
+                     (save-restriction
+                       (widen)
+                       (+ (count-lines (point-min) (point))
+                          (if (bolp) 1 0)))
+                   (cdr frame)))))
+
+         ((eq key ?y)
+          (setq subst
+                (int-to-string
+	         (if insource
+	             (save-restriction (widen) (current-column))
+	           (cdr frame))))))
+
+	(setq result (concat result (match-string 1 str) subst)))
+      (setq str (substring str (match-end 2))))
+    ;; There might be text left in STR when the loop ends.
+    (concat result str)))
+
+(defun gud-find-module (f _line)
+  (save-excursion
+    (save-restriction
+      (save-match-data
+        (with-current-buffer (get-file-buffer f)
+          (goto-char (point-min))
+          (if (re-search-forward "^module[[:space:]]+\\([^[:space:](]+\\)" nil t nil)
+              (match-string-no-properties 1)
+            ""))))))
 
 (provide 'fd-haskell)

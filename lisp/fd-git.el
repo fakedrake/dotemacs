@@ -1,4 +1,5 @@
 ; (setq fd-github-api (gh-issues-api "emacs-stuff"))
+(require 'gh)
 (defvar fd-github-api  nil)
 
 (defmethod gh-issues-issue-list-all ((api gh-issues-api) user repo)

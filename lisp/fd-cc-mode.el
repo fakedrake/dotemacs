@@ -43,7 +43,7 @@ at least one .cpp file in the same directory."
   (rainbow-delimiters-mode)
   (c++-to-headers-mode)
   (irony-mode)
-  (setq eldoc-documentation-function 'rtags-eldoc-function)
+  ; (setq eldoc-documentation-function 'rtags-eldoc-function)
   (flycheck-mode)
   (mapc
    (function
