@@ -309,4 +309,5 @@ from ignoring export options at the beginning of the file."
      "* References %?\n\n%a\n\n%:author (%:year): %:title\n   \
          In %:journal, %:pages.")))
 
+(setq bibtex-file-path "../")
 (provide 'fd-org)
