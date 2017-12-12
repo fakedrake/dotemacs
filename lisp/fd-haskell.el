@@ -480,6 +480,7 @@ Obeying it means displaying in another window the specified file and line."
 
 (defun gud-ghci (command-line)
   (interactive (list (gud-query-cmdline 'gud-ghci)))
+  (require 'gud)
   (when (and gud-comint-buffer
 	     (buffer-name gud-comint-buffer)
 	     (get-buffer-process gud-comint-buffer)
@@ -496,6 +497,7 @@ Obeying it means displaying in another window the specified file and line."
   (setq comint-prompt-regexp "^> ")
 
   (gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
+  ;; TODO: put _result=... line to minibuffer.
   (gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
   (gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
   (gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
@@ -507,14 +509,14 @@ Obeying it means displaying in another window the specified file and line."
   (run-hooks 'gud-ghci-mode-hook))
 
 (defvar gud-ghci-command-name "stack repl")
-
-
+(require 'gud)
 (defun gud-format-command (str arg)
   (let ((insource (not (eq (current-buffer) gud-comint-buffer)))
 	(frame (or gud-last-frame gud-last-last-frame))
 	(buffer-file-name-localized
          (and (buffer-file-name)
-              (file-local-name (buffer-file-name))))
+              (or (file-remote-p (buffer-file-name) 'localname)
+                  (buffer-file-name))))
 	result)
     (while (and str
 		(let ((case-fold-search nil))

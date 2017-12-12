@@ -72,7 +72,7 @@ at least one .cpp file in the same directory."
 
 (require 'c-eldoc)
 (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
-(add-to-list 'ido-ignore-buffers ".*-preprocessed\*")
+; (add-to-list 'ido-ignore-buffers ".*-preprocessed\*")
 
 ;; ;; Sometimes I dont want emacs to indent comments at all.
 ;; (setq fd-c-disable-comments-lineup nil)

@@ -44,28 +44,6 @@ each line."
 (global-set-key (kbd "M-p") 'backward-paragraph)
 (global-set-key (kbd "M-n") 'forward-paragraph)
 
-(defvar projects-alist '(("wikipedia-base" . "/home/fakedrake/Projects/CSAIL/Python/WikipediaBase/PLAN.org")
-                         ("overlay-parse" . "/home/fakedrake/Projects/CSAIL/Python/py/src/overlay-parse/overlay_parse/dates.py")
-                         ("dotemacs" . "~/.emacs.d/fd-misc-programming.el")
-                         ("csail-plan" . "~/Projects/CSAIL/PLAN.org")
-                         ("wikipedia-mirror-futuna" . "/ssh:cperivol@futuna.csail.mit.edu:/scratch/cperivol/wikipedia-mirror/")
-                         ("wikipedia-mirror-ashmore" . "/ssh:cperivol@ashmore.csail.mit.edu:/local/cperivol/wikipedia-mirror/")
-                         ("wikipedia-mirror-tuvalu" . "/ssh:cperivol@tuvalu.csail.mit.edu:/local/cperivol/wikipedia-mirror/")
-                         ("xilinx-zynq-bootstrap-purple" . "/ssh:cperivol@purple:/homes/cperivol/Projects/xilinx-zynq-bootstrap")
-                         ("wikipedia-base-futuna" . "/ssh:cperivol@futuna.csail.mit.edu:/scratch/cperivol/wikipediabase/"))
-  "An alist of projects and the most relatd file.")
-
-(defun read-project-name ()
-  "An abstraction to implement ways of deciding which should be
-the default project"
-  (ido-completing-read "Jump to project: " projects-alist))
-
-(defun jump-to-project (project-name)
-  "Jump to a characteristic file in a project found in
-PROJECTS-ALIST."
-  (interactive (list (read-project-name)))
-  (find-file  (cdr (assoc project-name projects-alist))))
-
 (global-set-key (kbd "C-x j p") 'jump-to-project)
 
 (setq git--commit-buttonize-filenames-regex "^\t[^:]+: +\\(.*\\)")

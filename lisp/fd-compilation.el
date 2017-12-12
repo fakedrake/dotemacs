@@ -109,8 +109,6 @@ returns non-nil if the function is to be called."
     (setq-local compilation-current-error (point-max))
     (with-no-function 'read-file-name (previous-error))))
 
-(defalias 'read-directory-name 'ido-read-directory-name)
-
 (defun fd-compile (command directory)
   "Save the compilation to either the closest .dir-locals.el or
 the current directory. Then run compilation."
@@ -246,8 +244,10 @@ the top."
 (defun fd-next-error-hook ()
   (message "Next!"))
 
-(defun add-images ()
-   (when (eq (current-buffer) (window-buffer)) (iimage-recenter)))
+(defun add-images () )
+
+;; (defun add-images ()
+;;   (iimage-recenter))
 
 (defun fd-iimage-hook ()
   (add-hook 'compilation-filter-hook 'add-images))
