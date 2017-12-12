@@ -21,6 +21,7 @@
         org-caldav
         oauth2
         irony-mode
+        google-translate
         ; rtags
         sx
         tree-mode
@@ -53,10 +54,6 @@
 	;; themes I like
 	naquadah-theme
 
-	;; ido
-	;; ido-completing-read+
-	smex
-
 	;; erc
 	erc-highlight-nicknames
 
@@ -82,7 +79,7 @@
 	c-eldoc
 	gist
 	org-mode
-        org-trello
+        org-ref
         cdlatex-mode
 	markdown-mode
 	ggtags
@@ -134,42 +131,6 @@
 	  :type github
 	  :pkgname "fakedrake/compilation-setup.el")
 
-   (:name ido-better-flex
-	  :description "Better flex matching for ido"
-	  :type github
-	  :pkgname "orfelyus/ido-better-flex"
-	  :compile "ido-better-flex.el")
-
-   (:name ido-mode-el
-	  :description "Better flex matching for ido"
-	  :type github
-	  :pkgname "orfelyus/ido-mode-el"
-	  :compile "ido.el")
-
-   (:name ido-speed-hack
-	  :description "Better flex matching for ido"
-	  :type github
-	  :pkgname "orfelyus/ido-speed-hack"
-	  :compile "ido-speed-hack.el")
-
-   (:name bm
-	  :description "Simple bookmark manager"
-	  :type github
-	  :pkgname "joodland/bm")
-
-   (:name twiki-mode
-	  :description "Major mode for editing Twiki wiki files
-	  for emacs, plus 'twikish' command line tool to retrieve
-	  and save twiki pages from text files."
-	  :type github
-	  :pkgname "christopherjwhite/emacs-twiki-mode")
-
-   (:name smex				; a better (ido like) M-x
-	  :after (progn
-		   (setq smex-save-file (my-expand-path ".smex-items"))
-		   (global-set-key (kbd "M-x") 'smex)
-		   (global-set-key (kbd "M-X") 'smex-major-mode-commands)))
-
    (:name swank-js
 	  :description "SLIME REPL and other development tools for in-browser JavaScript and Node.JS"
 	  :type github
@@ -190,11 +151,6 @@
 			       (equal (call-process-shell-command npm-install-cmd) 0))
 		     (error "Error during swank-js install to npm. (is prefix = .... in your ~/.npmrc?)")))
 	  :features nil)
-
-   (:name ido-ubiquitous
-	  :description "Ido everywhere."
-	  :type github
-	  :pkgname "DarwinAwardWinner/ido-ubiquitous")
 
    (:name web-beautify
 	  :description "Beautify CSS, HTML and JS/JSON."

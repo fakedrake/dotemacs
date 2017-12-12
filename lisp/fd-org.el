@@ -30,7 +30,7 @@
   (setq auto-fill-mode 1))
 
 (add-hook 'org-mode-hook 'fd-org-mode-hook)
-
+(add-to-list 'org-file-apps '("\\.pdf\\'" . "open"))
 
 ;; Aspell
 (setq ispell-program-name "aspell")
@@ -106,28 +106,6 @@
 (org-defkey org-mode-map [(meta shift left)]        'org-shiftleft)
 (org-defkey org-mode-map [(meta shift right)]       'org-shiftright)
 
-
-(defun org--notes-file (root-dir notes-filename)
-  "Get a notes org file"
-  (let* ((rd (directory-file-name root-dir))
-         (notes-fullpath (concat rd "/" notes-filename)))
-    (when (and (not (string= "/" rd)) (file-exists-p rd))
-      (if (file-exists-p notes-fullpath) notes-fullpath
-        (org--notes-file (file-name-directory rd) notes-filename)))))
-
-(defun org-open-notes-file ()
-  (interactive)
-  (let ((notes-file (org--notes-file default-directory "NOTES.org"))
-        (buf (current-buffer)))
-    (if notes-file
-        (progn
-          (find-file notes-file)
-          ;; XXX: Maybe a notes minor mode?
-          (unless (eq buf (current-buffer))
-            (setq-local notes-last-buf buf)))
-      (error "No NOTES.org found in a parent directory."))))
-
-(global-set-key (kbd "C-c C-n") 'org-open-notes-file)
 
 ;; Babel
 (org-babel-do-load-languages

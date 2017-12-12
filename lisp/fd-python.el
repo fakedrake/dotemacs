@@ -39,7 +39,7 @@
 (setq-default python-shell-virtualenv-root "~/bin/py")
 
 (defun fd-venv-path (path)
-  (interactive (list (ido-read-directory-name "Virtualenv root: ")))
+  (interactive (list (read-directory-name "Virtualenv root: ")))
   (add-dir-local-variable 'python-mode 'python-shell-virtualenv-root path)
   (add-dir-local-variable 'python-mode 'python-shell-virtualenv-path path))
 
@@ -131,7 +131,7 @@ is nil check if path in any project."
   "The directory where you have most of your python projects.")
 
 (defun fd-python-open-project (dir)
-  (interactive (list (ido-read-directory-name
+  (interactive (list (read-directory-name
 		      "Python project root to open: "
 		      fd-python-projects-directory)))
   (when (not (fd-python-in-project-p dir))
@@ -143,7 +143,7 @@ is nil check if path in any project."
     (fd-python-open-project-internal dir)))
 
 (defun fd-python-close-project (dir)
-  (interactive (list (ido-read-directory-name
+  (interactive (list (read-directory-name
 		      "Python project root to close: ")))
   (when (not (fd-python-in-project-p dir))
     (error "Could not close project. Not a project directory"))
