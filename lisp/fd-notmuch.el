@@ -4,13 +4,18 @@
                :key "u"
                :sort-order newest-first
                :search-type tree)
+        (:name "applications"
+               :query "from:microsoft.com or from:janestreet or from:mozilla"
+               :key "a"
+               :sort-order newest-first
+               :search-type tree)
         (:name "inbox"
                :key "i"
                :query "tag:inbox and date:2M..today"
                :sort-order newest-first
                :notmuch-search-type t)
         (:name "stratis"
-               :query "from:sviglas and tag:unread"
+               :query "from:sviglas tag:unread"
                :key "s"
                :sort-order newest-first
                :search-type tree)

@@ -247,7 +247,7 @@ the top."
   (message "Next!"))
 
 (defun add-images ()
-  (iimage-recenter))
+   (when (eq (current-buffer) (window-buffer)) (iimage-recenter)))
 
 (defun fd-iimage-hook ()
   (add-hook 'compilation-filter-hook 'add-images))

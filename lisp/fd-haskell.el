@@ -423,29 +423,35 @@ Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
   "Find and obey the last filename-and-line marker from the debugger.
 Obeying it means displaying in another window the specified file and line."
   (interactive)
-  (when gud-last-frame
-    (gud-set-buffer)
-    ;; gud-last-frame => (file . line)
-    (cond
-     ((not (listp (cdr gud-last-frame)))
-      (gud-display-line (car gud-last-frame) (cdr gud-last-frame)))
-     ;; gud-last-frame => (file line begin-column end-column)
-     ((and
-       (= 4 (length gud-last-frame))
-       (every #'numberp (cdr gud-last-frame)))
-      (let ((file (car gud-last-frame))
-            (line (cadr gud-last-frame))
-            (expr-begin-col (caddr gud-last-frame))
-            (expr-end-col  (cadddr gud-last-frame)))
-        (gud-display-line file line)
-        (pulse-momentary-highlight-region
-         (save-excursion (beginning-of-line) (forward-char expr-begin-col) (point))
-         (save-excursion (beginning-of-line) (forward-char expr-end-col) (point)))))
-     ;; TODO: gud-last-frame => (file (begin-line . begin-column) (end-line . end-column))
-     ;; Anything else
-     (t (error "Unknown gud-last-frame format.")))
-    (setq gud-last-last-frame gud-last-frame
-	  gud-last-frame nil)))
+  (flet ((col-pos (col) (save-excursion (beginning-of-line) (+ col (point)))))
+    (when gud-last-frame
+      (gud-set-buffer)
+      ;; gud-last-frame => (file . line)
+      (cond
+       ((not (listp (cdr gud-last-frame)))
+        (gud-display-line (car gud-last-frame) (cdr gud-last-frame)))
+       ;; gud-last-frame => (file line begin-column end-column)
+       ((and
+         (= 4 (length gud-last-frame))
+         (every #'numberp (cdr gud-last-frame)))
+        (let* ((file (car gud-last-frame))
+               (file-buf (find-file-noselect file t))
+               (line (cadr gud-last-frame))
+               (expr-begin-col (caddr gud-last-frame))
+               (expr-end-col (cadddr gud-last-frame)))
+          (gud-display-line file line)
+          (with-current-buffer file-buf
+            (let ((expr-begin (col-pos expr-begin-col))
+                  (expr-end  (col-pos expr-end-col))
+                  (pulse-delay .30))
+              (message (concat "Expr " (buffer-substring expr-begin expr-end)))
+              (pulse-momentary-highlight-region expr-begin expr-end)))))
+       ;; TODO: gud-last-frame =>
+       ;; (file (begin-line . begin-column) (end-line . end-column))
+       ;; Anything else
+       (t (error "Unknown gud-last-frame format.")))
+      (setq gud-last-last-frame gud-last-frame
+	    gud-last-frame nil))))
 
 (defun gud-ghci-marker-filter (string)
   (setq gud-marker-acc (if gud-marker-acc (concat gud-marker-acc string) string))
@@ -453,13 +459,13 @@ Obeying it means displaying in another window the specified file and line."
   (let (start)
     ;; Process all complete markers in this chunk.
     (while (string-match
-		"\\(Logged breakpoint at\\|Stopped in [^ \t\r\n]+,\\) \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\)"
-		gud-marker-acc start)
+	    "\\(Logged breakpoint at\\|Stopped in [^ \t\r\n]+,\\) \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\|\\)"
+	    gud-marker-acc start)
       (setq gud-last-frame
 	    (list (match-string 1 gud-marker-acc)
 		  (string-to-number (match-string 2 gud-marker-acc))
                   (string-to-number (match-string 3 gud-marker-acc))
-                  (string-to-number (match-string 3 gud-marker-acc)))
+                  (string-to-number (match-string 4 gud-marker-acc)))
 	    start (match-end 0)))
 
     ;; Search for the last incomplete line in this chunk
