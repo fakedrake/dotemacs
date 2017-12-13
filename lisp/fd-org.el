@@ -83,9 +83,12 @@
   ;; pacman -S texlive-most texlive-lang
   ;; XXX: Ensure xetexlatex is available
   (setq org-latex-pdf-process
-	'("xelatex -interaction nonstopmode %f"
-	  "xelatex -interaction nonstopmode %f")) ;; for multiple passes
-
+	'("xelatex -interaction nonstopmode -output-directory %o %f"
+          "bibtex %b"
+          "xelatex -interaction nonstopmode -output-directory %o %f"
+	  "xelatex -interaction nonstopmode -output-directory %o %f"))
+  ;; for multiple passes
+  (setq org-latex-caption-above nil)
   (setq org-file-apps (list
                        '(auto-mode . emacs)
                        (if (eq system-type 'darwin)
