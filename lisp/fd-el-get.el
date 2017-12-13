@@ -80,6 +80,7 @@
 	gist
 	org-mode
         org-ref
+        pdf-tools
         cdlatex-mode
 	markdown-mode
 	ggtags

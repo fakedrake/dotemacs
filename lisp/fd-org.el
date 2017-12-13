@@ -26,8 +26,11 @@
   (define-key org-mode-map "\M-p" 'org-backward-element)
   (define-key org-mode-map (kbd "<C-tab>") 'yas-expand)
   (setq org-return-follows-link t)
+  (reftex-mode 1)
 
   (setq auto-fill-mode 1))
+
+(require 'org-ref)
 
 (add-hook 'org-mode-hook 'fd-org-mode-hook)
 (add-to-list 'org-file-apps '("\\.pdf\\'" . "open"))
@@ -309,5 +312,5 @@ from ignoring export options at the beginning of the file."
      "* References %?\n\n%a\n\n%:author (%:year): %:title\n   \
          In %:journal, %:pages.")))
 
-(setq bibtex-file-path "../")
+(setq bibtex-file-path "../literature/")
 (provide 'fd-org)
