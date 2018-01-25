@@ -67,6 +67,7 @@
          `(linum ((t (:inherit default :background "#0c191C" :foreground "gray50"))))
          `(haskell-debug-newline-face ((t (:inherit linum))))
          `(haskell-debug-trace-number-face ((t (:inherit linum))))
+         `(comint-highlight-prompt ((t (:inherit font-lock-function-name-face))))
 
          ;; Development
          `(font-lock-comment-face ((t (:foreground ,comment))))

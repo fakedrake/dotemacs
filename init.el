@@ -96,7 +96,8 @@
  '(package-selected-packages (quote (edit-indirect)))
  '(safe-local-variable-values
    (quote
-    ((compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
+    ((compile-root . "/home/drninjabatman/Projects/cv-for-me/")
+     (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
      (compile-root . "/Users/drninjabatman/Scratch/tpch_2_17_0/dbgen/")
      (compile-root . "/home/drninjabatman/Projects/FluiDB/resources/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/")
@@ -105,4 +106,5 @@
      (compile-root . "/Users/drninjabatman/Downloads/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/")
      (compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
-     (compile-root . "/Users/drninjabatman/Projects/advent/")))))
+     (compile-root . "/Users/drninjabatman/Projects/advent/"))))
+ '(tramp-syntax (quote default) nil (tramp)))
