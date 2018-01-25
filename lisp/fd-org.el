@@ -82,11 +82,16 @@
   ;; for arch that would be:
   ;; pacman -S texlive-most texlive-lang
   ;; XXX: Ensure xetexlatex is available
-  (setq org-latex-pdf-process
-	'("xelatex -interaction nonstopmode -output-directory %o %f"
-          "bibtex %b"
-          "xelatex -interaction nonstopmode -output-directory %o %f"
-	  "xelatex -interaction nonstopmode -output-directory %o %f"))
+
+  (let*
+      ((latex-args " -shell-escape -interaction nonstopmode -output-directory %o %f")
+       (xelatex-cmd (concat "xelatex" latex-args))
+       (latex-cmd (concat "cd %o; latex" latex-args)))
+    (setq org-latex-pdf-process
+	  (list xelatex-cmd "bibtex %b" xelatex-cmd xelatex-cmd))
+    (setf
+     (car (plist-get (alist-get 'dvipng org-preview-latex-process-alist) :latex-compiler))
+     latex-cmd))
   ;; for multiple passes
   (setq org-latex-caption-above nil)
   (setq org-file-apps (list
@@ -113,9 +118,25 @@
 ;; Babel
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((shell . t) (python . t) (latex . t) (haskell . t) (js . t) (dot . t)))
+ '((shell . t)
+   (python . t)
+   (latex . t)
+   (haskell . t)
+   (js . t)
+   (dot . t)
+   (dot2tex . t)
+   (algorithmic . t)))
+(setq org-latex-custom-lang-environments
+     '((algorithmic "\\RestyleAlgo{boxruled}
+\\begin{algorithm}[H]
+%s
+\\caption{%c}\\label{%l}
+\\end{algorithm}")))
 (add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))
-
+(add-to-list 'org-src-lang-modes '("dot2tex" . graphviz-dot))
+(setq org-latex-listings 'minted)
+(add-to-list 'org-latex-default-packages-alist '("" "minted" nil))
+(setq org-latex-packages-alist nil)
 (defun fd--org-doc-begin ()
   (save-excursion
     (goto-char (point-min))

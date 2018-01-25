@@ -156,9 +156,9 @@
                                      src-dirs))))
             (delete-if-not 'file-exists-p full-paths)))))))
 
-(defmacro within-cabal-file (&rest body)
+(defmacro with-cabal-file-buffer (&rest body)
   `(let ((cabal-file (haskell-cabal-find-file)))
-     (if (not cabal-file) (error "Not in haskell project.")
+     (if (null cabal-file) (error "Not in haskell project.")
        (with-current-buffer (find-file-noselect cabal-file)
          ,@body))))
 
@@ -180,7 +180,7 @@
 (defun haskell-infer-module-name ()
   (car
    (let ((fname (buffer-file-name)))
-     (within-cabal-file
+     (with-cabal-file-buffer
       (mapcar
        (lambda (src-dir)
          (replace-regexp-in-string

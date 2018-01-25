@@ -23,6 +23,7 @@
         irony-mode
         google-translate
         ; rtags
+        pdf-tools
         sx
         tree-mode
         dictionary
@@ -107,7 +108,7 @@
    (:name org-mode
 	  :description "Just my fork of org mode"
 	  :type github
-	  :pkgname "fakedrake/org-mode"
+	  :pkgname "fakedrake/org"
           :info "doc"
           :build/berkeley-unix `,(mapcar
                                   (lambda (target)

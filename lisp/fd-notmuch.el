@@ -9,14 +9,20 @@
                :query "tag:inbox and date:2M..today"
                :sort-order newest-first
                :notmuch-search-type t)
-        (:name "stratis"
+        (:name "Stratis"
                :query "from:sviglas and tag:unread"
-               :key "s"
                :sort-order newest-first
                :search-type tree)
-        (:name "boris"
+        (:name "Microsoft"
+               :query "from:*micro* and tag:unread"
+               :sort-order newest-first
+               :search-type tree)
+        (:name "Boris"
                :query "from:boris and tag:unread"
-               :key "b"
+               :sort-order newest-first
+               :search-type tree)
+        (:name "Euclid"
+               :query "from:*euclid* and tag:unread"
                :sort-order newest-first
                :search-type tree)
         (:name "flagged"
