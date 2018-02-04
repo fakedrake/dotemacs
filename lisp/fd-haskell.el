@@ -7,7 +7,7 @@
 (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
 (setq haskell-process-type 'auto)
-(setq haskell-process-path-ghci "cabal")
+(setq haskell-process-path-ghci "stack")
 (setq haskell-process-args-ghci '("repl"))
 
 (defun fd-haskell-load-region ()
@@ -71,8 +71,7 @@
   (flycheck-mode)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
-  (setq-local baginning-of-defun-function 'haskell-beginning-of-defun)
-                                        ; (ghc-init)
+  (haskell-decl-scan-mode 1)
   (if-let* ((adv (assq 'ghc-check-syntax-on-save
                        (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))

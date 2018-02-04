@@ -1,3 +1,4 @@
+;; Use M-i when in isearch to jump to helm-swoop
 (require 'helm)
 (require 'helm-config)
 (helm-mode 1)

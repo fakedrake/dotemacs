@@ -17,6 +17,8 @@
       '(;; Dependencies from who-kows-where
         flycheck
 	memoize
+        helm
+        helm-swoop
         ; imaxima
         org-caldav
         oauth2
