@@ -38,6 +38,8 @@ at least one .cpp file in the same directory."
                                    :maxlines (or 1 5))))))
     (when symbol symbol-text)))
 
+(add-to-list 'flycheck-clang-warnings "pedantic")
+
 (defun fakedrake-cc-mode-init ()
   "Just some initializations I need for C"
   (rainbow-delimiters-mode)
@@ -64,6 +66,7 @@ at least one .cpp file in the same directory."
   (define-key c-mode-base-map (kbd "M-p") 'c-beginning-of-statement)
   (define-key c-mode-base-map (kbd "C-j") 'my-cc-newline-and-indent)
   (define-key c-mode-base-map (kbd "C-x <SPC>") 'gud-break)
+  (setq-local flycheck-clang-language-standard "gnu++17")
   (c-add-style "google-like" google-like-c-style)
   (setq c-default-style "google-like" c-basic-offset 4))
 

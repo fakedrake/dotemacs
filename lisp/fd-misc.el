@@ -102,10 +102,10 @@ parent."
     ad-do-it))
 
 (defun move-text-block-internal (start end lines)
-  (let ((text (buffer-substring start end))
-        (rel-mark (- (mark) end))
-        (move-mark (and mark-active transient-mark-mode))
-        (rel-point (- (point) end)))
+  (let* ((text (buffer-substring start end))
+         (rel-mark (and mark (- (mark) end)))
+         (move-mark (and rel-mark mark-active transient-mark-mode))
+         (rel-point (- (point) end)))
     (delete-region start end)
     (forward-line lines)
     (insert text)
@@ -360,4 +360,6 @@ ignore buffers with."
 (setq ido-cr+-max-items 50000)
 
 (setq enable-local-variables :all)
+
+(require 'helm-swoop)
 (provide 'fd-misc)

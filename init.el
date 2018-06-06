@@ -96,7 +96,9 @@
  '(package-selected-packages (quote (edit-indirect)))
  '(safe-local-variable-values
    (quote
-    ((compile-root . "/home/drninjabatman/Projects/cv-for-me/")
+    ((compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
+     (compile-root . "/Users/drninjabatman/.emacs.d/")
+     (compile-root . "/home/drninjabatman/Projects/cv-for-me/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
      (compile-root . "/Users/drninjabatman/Scratch/tpch_2_17_0/dbgen/")
      (compile-root . "/home/drninjabatman/Projects/FluiDB/resources/")

@@ -13,7 +13,7 @@
 
 (defun fd-elisp-hooks ()
   (rainbow-delimiters-mode 1)
-  (define-key emacs-lisp-mode-map (kbd "M-.") 'find-function)
+  ;; (define-key emacs-lisp-mode-map (kbd "M-.") 'find-function)
   (define-key emacs-lisp-mode-map (kbd "C-M-d") 'edebug-defun))
 
 (add-hook 'emacs-lisp-mode-hook 'fd-elisp-hooks)
@@ -47,5 +47,6 @@
 (require 'slime)
 (slime-setup '(slime-fancy slime-tramp slime-asdf))
 (slime-require :swank-listener-hooks)
+(setq scheme-program-name "chez")
 
 (provide 'fd-lisp)

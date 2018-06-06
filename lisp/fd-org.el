@@ -130,10 +130,10 @@
    (dot2tex . t)
    (algorithmic . t)))
 (setq org-latex-custom-lang-environments
-     '((algorithmic "\\RestyleAlgo{boxruled}
+     '((algorithmic "
 \\begin{algorithm}[H]
-%s
 \\caption{%c}\\label{%l}
+%s
 \\end{algorithm}")))
 (add-to-list 'org-src-lang-modes '("dot" . graphviz-dot))
 (add-to-list 'org-src-lang-modes '("dot2tex" . graphviz-dot))
@@ -337,4 +337,7 @@ from ignoring export options at the beginning of the file."
          In %:journal, %:pages.")))
 
 (setq bibtex-file-path "../literature/")
+(add-hook 'tex-mode-hook 'fd-tex-mode-hook)
+(defun fd-tex-mode-hook ()
+  (setq-local require-final-newline nil))
 (provide 'fd-org)

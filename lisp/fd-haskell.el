@@ -62,6 +62,8 @@
   (setq comment-auto-fill-only-comments nil
         haskell-font-lock-symbols t
         haskell-process-args-stack-ghci nil)
+  (setq haskell-tags-on-save t
+        haskell-stylish-on-save t)
   (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
     (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
@@ -69,6 +71,7 @@
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
   (flycheck-mode)
+  (add-hook 'flycheck-after-syntax-check-hook 'haskell-check-module-name nil t)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
   (haskell-decl-scan-mode 1)
@@ -108,9 +111,9 @@
                          "/")))
              (rsubpath (reverse subpath))
              (retfn (lambda (x) (concat cabal-dir
-                                        "tests/"
-                                        (mapconcat 'identity x "/")
-                                        (if x "/" "") nondir)))
+                                   "tests/"
+                                   (mapconcat 'identity x "/")
+                                   (if x "/" "") nondir)))
 
                                         ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
              (defret (funcall retfn subpath))
@@ -177,21 +180,23 @@
   (haskell-cabal-subsection-entry-list (haskell-cabal-section) key))
 
 (defun haskell-infer-module-name ()
-  (car
-   (let ((fname (buffer-file-name)))
-     (with-cabal-file-buffer
-      (mapcar
-       (lambda (src-dir)
-         (replace-regexp-in-string
-          "\\.hs$" ""
-          (replace-regexp-in-string
-           "/" "."
-           (substring fname (+ 1 (length src-dir))))))
-       (delete-if-not
-        (lambda (x) (string-prefix-p x fname))
+  "Infer the module name. (used in yasnippet)"
+  (save-match-data
+    (car
+     (let ((fname (buffer-file-name)))
+       (with-cabal-file-buffer
         (mapcar
-         (apply-partially 'concat default-directory)
-         (haskell-cabal-get-key "hs-source-dirs"))))))))
+         (lambda (src-dir)
+           (replace-regexp-in-string
+            "\\.hs$" ""
+            (replace-regexp-in-string
+             "/" "."
+             (substring fname (+ 1 (length src-dir))))))
+         (delete-if-not
+          (lambda (x) (string-prefix-p x fname))
+          (mapcar
+           (apply-partially 'concat default-directory)
+           (haskell-cabal-get-key "hs-source-dirs")))))))))
 
 (defvar align-haskell-arrows-list '(haskell-arrows
                                     (regexp   . "[^-=!^&*+<>/| \t\n]\\(\\s-*\\)->\\(\\s-*\\)\\([^= \t\n]\\|$\\)")
@@ -393,30 +398,27 @@ Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
                   (unless (string= dir next) next))))
     (or dir dir-root)))
 
-(defun tensorflow-haskell-run-session (dir-root)
-  "Run a session for the tensorflow project."
-  (interactive
-   (list
-    (directory-file-name
-     (read-directory-name
-      "Project root: " (stack-root default-directory)))))
-
-  (let* ((session-name (file-name-base dir-root))
-         (session (list (cons 'name session-name)
-                        (cons 'cabal-dir dir-root))))
-    (when (cl-notany
-           (lambda (s) (string= (haskell-session-name s) session-name))
-           haskell-sessions)
-      (add-to-list 'haskell-sessions session)
-      (setq haskell-process-check-cabal-config-on-load nil
-            haskell-process-log t)
-      (haskell-process-start (setq haskell-session session))
-      (switch-to-buffer  "*haskell-process-log*"))))
-
-
+
 ;; GUD
 ;;
-;; M-x gud-ghci<RET>stack ghci --is-main fluidb:exe:sql2cpp
+;; M-x gud-ghci<RET>stack ghci
+(defmacro with-gud-comint-layer-light (body)
+  `(let ((comint-prompt-regexp haskell-prompt-regexp)
+         (gud-comint-buffer (haskell-interactive-buffer)))
+     (flet ((comint-dynamic-complete-filename () (error "Unsupported completion"))
+            (comint-input-sender () (error "Unsupported, bad gud mode"))
+            (comint-interrupt-subjob () (error "Should support"))
+            (comint-line-beginning-position () (error "Unsupported completion"))
+            (comint-output-filter (proc str) (haskell-process-filter proc str))
+            (comint-stop-subjob () (error "Unsupported, bad target name"))
+            (comint-update-fence ())    ; Internal to comint
+            (make-comint (a b c d e) (haskell-session)))
+       ,@body)))
+
+(defmacro haskell-gud-def (func cmd key &optional doc)
+  `(gud-def
+    (lambda (&rest args) (with-gud-comint-layer-light (apply ,func args)))
+    ,cmd ,key ,doc))
 
 (defun gud-display-frame ()
   "Find and obey the last filename-and-line marker from the debugger.
@@ -480,32 +482,32 @@ Obeying it means displaying in another window the specified file and line."
 (defun gud-ghci (command-line)
   (interactive (list (gud-query-cmdline 'gud-ghci)))
   (require 'gud)
-  (when (and gud-comint-buffer
-	     (buffer-name gud-comint-buffer)
-	     (get-buffer-process gud-comint-buffer)
-	     (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
-    (gdb-restore-windows)
-    (error
-     "Multiple debugging requires restarting in text command mode"))
+  (with-gud-comint-layer
+   (when (and gud-comint-buffer
+	      (buffer-name gud-comint-buffer)
+	      (get-buffer-process gud-comint-buffer)
+	      (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
+     (gdb-restore-windows)
+     (error
+      "Multiple debugging requires restarting in text command mode"))
 
-  (gud-common-init command-line nil 'gud-ghci-marker-filter)
-  (setq-local gud-minor-mode 'ghci)
-  (setq paragraph-start comint-prompt-regexp)
-  (comint-send-string (get-buffer-process (current-buffer))
-                      ":set prompt \"> \"\n:print '\\n'\n")
-  (setq comint-prompt-regexp "^> ")
+   (gud-common-init command-line nil 'gud-ghci-marker-filter)
+   (setq-local gud-minor-mode 'ghci)
+   (setq paragraph-start comint-prompt-regexp)
+   (comint-send-string (get-buffer-process (current-buffer))
+                       ":set prompt \"> \"\n:print '\\n'\n")
 
-  (gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
-  ;; TODO: put _result=... line to minibuffer.
-  (gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
-  (gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
-  (gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
-  (gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
-  (gud-def gud-up     ":back"           "<" "Up one stack frame.")
-  (gud-def gud-down   ":forward"        ">" "Down one stack frame.")
-  (gud-def gud-run    ":trace %e"       "t" "Trace expression.")
-  (gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
-  (run-hooks 'gud-ghci-mode-hook))
+   (haskell-gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
+   ;; TODO: put _result=... line to minibuffer.
+   (haskell-gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
+   (haskell-gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
+   (haskell-gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
+   (haskell-gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
+   (haskell-gud-def gud-up     ":back"           "<" "Up one stack frame.")
+   (haskell-gud-def gud-down   ":forward"        ">" "Down one stack frame.")
+   (haskell-gud-def gud-run    ":trace %e"       "t" "Trace expression.")
+   (haskell-gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
+   (run-hooks 'gud-ghci-mode-hook)))
 
 (defvar gud-ghci-command-name "stack repl")
 (require 'gud)
@@ -597,5 +599,103 @@ Obeying it means displaying in another window the specified file and line."
           (if (re-search-forward "^module[[:space:]]+\\([^[:space:](]+\\)" nil t nil)
               (match-string-no-properties 1)
             ""))))))
+
+(setq haskell-font-lock-symbols-alist
+      '(("Integer" . "ℤ")
+        ("Bool" . "𝔹")
+        ("Rational" . "ℚ")
+        ("++" . "⧺")
+        (">>" . "⨠")
+        ("<>" . "•")
+        ("\\" . "λ")
+        ("not" . "¬")
+        ("->" . "→")
+        ("<-" . "←")
+        ("=>" . "⇒")
+        ("()" . "∅")
+        ("==" . "≡")
+        ("/=" . "≢")
+        (">=" . "≥")
+        ("<=" . "≤")
+        ("!!" . "‼")
+        ("&&" . "∧")
+        ("||" . "∨")
+        ("sqrt" . "√")
+        ("undefined" . "⊥")
+        ("pi" . "π")
+        ("~>" . "⇝") ;; Omega language
+        ;; ("~>" "↝") ;; less desirable
+        ("-<" . "↢") ;; Paterson's arrow syntax
+        ;; ("-<" "⤙") ;; nicer but uncommon
+        ("::" . "∷")
+        ("." "∘" ; "○"
+         ;; Need a predicate here to distinguish the . used by
+         ;; forall <foo> . <bar>.
+         haskell-font-lock-dot-is-not-composition)
+        ("forall" . "∀")))
+
+(require 'align)
+(add-to-list 'align-rules-list
+             '(haskell-types
+               (regexp . "\\(\\s-+\\)\\(::\\|∷\\)\\s-+")
+               (modes quote (haskell-mode literate-haskell-mode))))
+(add-to-list 'align-rules-list
+             '(haskell-assignment
+               (regexp . "\\(\\s-+\\)=\\s-+")
+               (modes quote (haskell-mode literate-haskell-mode))))
+(add-to-list 'align-rules-list
+             '(haskell-arrows
+               (regexp . "\\(\\s-+\\)\\(->\\|→\\)\\s-+")
+               (modes quote (haskell-mode literate-haskell-mode))))
+(add-to-list 'align-rules-list
+             '(haskell-left-arrows
+               (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
+               (modes quote (haskell-mode literate-haskell-mode))))
+
+(require 'haskell-modules)
+;;;###autoload
+(defun haskell-add-import (module)
+  (interactive (list (completing-read
+                      "Module: "
+                      (haskell-session-all-modules
+                       (haskell-modules-session)))))
+  (save-restriction
+    (widen)
+    (save-excursion
+      (goto-char (point-max))
+      (haskell-navigate-imports)
+      (insert (concat "import " module "\n")))))
+
+(defun flycheck-type-of-hole (&optional pos)
+  "Get the type of the hole at POS.
+
+POS defaults to `point'."
+  (-when-let* ((errors (flycheck-overlay-errors-at (or pos (point)))))
+    (with-temp-buffer
+      (insert (flycheck-error-message (car errors)))
+      (goto-char (point-min))
+      (save-match-data
+        (when (search-forward-regexp
+               "Found hole: _[[:alnum:]_']* :: \\([[:alnum:]_']+\\)"
+               nil t)
+          (match-string 1))))))
+
+(defun haskell-check-module-name ()
+  (interactive)
+  (save-match-data
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward flycheck-haskell-module-re nil t)
+        (when-let ((decl (match-string-no-properties 1))
+                   (decl-pos (match-beginning 1))
+                   (inf (haskell-infer-module-name)))
+          (unless (string= inf decl)
+            (goto-char decl-pos)
+            (let ((flycheck-highlighting-mode 'symbols)
+                  (line (current-line))
+                  (col (current-column)))
+              (flycheck-add-overlay
+               (flycheck-error-new-at line col 'error
+                                      (format "Expected module name %s" inf))))))))))
 
 (provide 'fd-haskell)

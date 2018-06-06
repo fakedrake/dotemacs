@@ -233,10 +233,11 @@
         :type github
         :depends (tree-mode)
         :pkgname "death/reddit-mode")
- (:name tree-mode
-        :description "Tree widgets"
+ (:name attrap
+        :description "ATtempt To Repair At Point (emacs flycheck extension)"
         :type github
-        :pkgname "emacsmirror/tree-mode")
+        :depends (flycheck)
+        :pkgname "jyp/attrap")
 
  (:name queue
         :description "Override the shitty melpa mirror"
@@ -253,6 +254,7 @@
                           ("sh" "./configure")
                           ("make"))
        :info "doc")
+
 
  ))
 
