@@ -103,7 +103,7 @@ parent."
 
 (defun move-text-block-internal (start end lines)
   (let* ((text (buffer-substring start end))
-         (rel-mark (and mark (- (mark) end)))
+         (rel-mark (and (mark) (- (mark) end)))
          (move-mark (and rel-mark mark-active transient-mark-mode))
          (rel-point (- (point) end)))
     (delete-region start end)

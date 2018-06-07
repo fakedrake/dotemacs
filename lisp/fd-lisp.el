@@ -13,7 +13,7 @@
 
 (defun fd-elisp-hooks ()
   (rainbow-delimiters-mode 1)
-  ;; (define-key emacs-lisp-mode-map (kbd "M-.") 'find-function)
+  (define-key emacs-lisp-mode-map (kbd "M-.") 'xref-find-definitions)
   (define-key emacs-lisp-mode-map (kbd "C-M-d") 'edebug-defun))
 
 (add-hook 'emacs-lisp-mode-hook 'fd-elisp-hooks)
