@@ -42,11 +42,11 @@
 
 
 ;; XXX: Automatically run sbcl
-(load (expand-file-name "~/quicklisp/slime-helper.el"))
-(setq inferior-lisp-program "/usr/bin/sbcl")
-(require 'slime)
-(slime-setup '(slime-fancy slime-tramp slime-asdf))
-(slime-require :swank-listener-hooks)
-(setq scheme-program-name "chez")
+; (load (expand-file-name "~/quicklisp/slime-helper.el"))
+;; (setq inferior-lisp-program "/usr/bin/sbcl")
+;; (require 'slime)
+;; (slime-setup '(slime-fancy slime-tramp slime-asdf))
+;; (slime-require :swank-listener-hooks)
+;; (setq scheme-program-name "chez")
 
 (provide 'fd-lisp)

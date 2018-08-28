@@ -360,6 +360,6 @@ ignore buffers with."
 (setq ido-cr+-max-items 50000)
 
 (setq enable-local-variables :all)
-
+(setq helm-buffer-skip-remote-checking t)
 (require 'helm-swoop)
 (provide 'fd-misc)
