@@ -13,7 +13,7 @@ comint."
             (comint-output-filter (proc str) (haskell-process-filter proc str))
             (comint-stop-subjob () (error "Unsupported, bad target name"))
             (comint-update-fence ())    ; Internal to comint
-            (comint-send-string (proc str) (error "Implement"))
+            (comint-send-string (proc str) (haskell-process-send-string proc str))
             (make-comint (a b c d e) (haskell-session))
             (gdb-restore-windows () (error "Implement gdb-restore-windows")))
        ,@body)))
@@ -21,9 +21,11 @@ comint."
 (defmacro haskell-gud-def (func cmd key &optional doc)
   "Define a gud command like gud-def but the command will use
 haskell-interactive rather than comint."
-  `(gud-def
-    (lambda (&rest args) (with-gud-comint-layer-light (apply ,func args)))
-    ,cmd ,key ,doc))
+  (let ((sym (gensym (symbol-name func))))
+    `(progn
+       (defun ,sym (&rest args)
+         (with-gud-comint-layer-light (apply ,func args)))
+       (gud-def ,sym ,cmd ,key ,doc))))
 
 (defun gud-display-frame ()
   "Find and obey the last filename-and-line marker from the debugger.
@@ -98,7 +100,7 @@ Obeying it means displaying in another window the specified file and line."
    ;; (gud-common-init command-line nil 'gud-ghci-marker-filter)
    (setq-local gud-minor-mode 'ghci)
    (setq paragraph-start comint-prompt-regexp)
-   (comint-send-string (get-buffer-process (current-buffer))
+   (comint-send-string (haskell-process)
                        ":set prompt \"> \"\n:print '\\n'\n")
 
    (haskell-gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
@@ -111,6 +113,7 @@ Obeying it means displaying in another window the specified file and line."
    (haskell-gud-def gud-down   ":forward"        ">" "Down one stack frame.")
    (haskell-gud-def gud-run    ":trace %e"       "t" "Trace expression.")
    (haskell-gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
+   (message "Hooks!")
    (run-hooks 'gud-ghci-mode-hook)))
 
 (defvar gud-ghci-command-name "stack repl")
