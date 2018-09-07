@@ -20,6 +20,7 @@
         helm
         helm-swoop
         ; imaxima
+        htmlize
         org-caldav
         oauth2
         irony-mode

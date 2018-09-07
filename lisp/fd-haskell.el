@@ -1,27 +1,22 @@
+(add-to-list 'load-path (format "%s/.emacs.d/lisp/haskell" (getenv "HOME")))
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
+(require 'fd-gud-haskell)
+(require 'fd-haskell-holes)
+(require 'fd-haskell-insert-definition)
+(require 'fd-haskell-interactive)
+(require 'fd-haskell-ligatures)
+(require 'fd-haskell-modules)
+(require 'fd-haskell-test-files)
+
+
 ;; Make sure our mode overrides interactive-haskell-mode
-(remove-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
 (add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
-(remove-hook 'haskell-mode-hook 'interactive-haskell-mode)
 (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
 (setq haskell-process-type 'auto)
 (setq haskell-process-path-ghci "stack")
 (setq haskell-process-args-ghci '("repl"))
-
-(defun fd-haskell-load-region ()
-  (interactive)
-  (if (not (region-active-p)) (call-interactively haskell-process-load-file)
-    (let* ((tmp (concat (make-temp-file "haskell-region") ".hs"))
-           (haskell-session (haskell-session))
-           (cmd (format "load \"%s\"" (replace-regexp-in-string
-                                       "\""
-                                       "\\\\\""
-                                       tmp))))
-      (write-region (region-beginning) (region-end) tmp)
-      (haskell-process-file-loadish cmd nil buf)
-      (delete-file tmp))))
 
 (add-to-list
  'haskell-compilation-error-regexp-alist
@@ -54,6 +49,14 @@
     (define-key map (kbd "C-c i") 'haskell-jump-to-or-insert-defininition)
     map)
   "Keymap for using `interactive-haskell-mode'.")
+
+(defun move-keymap-to-top (mode)
+  (let ((pair (assq mode minor-mode-map-alist)))
+    (if (not pair)
+        (error "Map %s not member of minor-mode-map-alist")
+      (setq minor-mode-map-alist
+            (cons pair (assq-delete-all mode minor-mode-map-alist))))))
+
 ;;;###autoload
 (define-minor-mode drninjabatmans-haskell-mode
   "Some extras for haskell-mode."
@@ -74,7 +77,17 @@
   (add-hook 'flycheck-after-syntax-check-hook 'haskell-check-module-name nil t)
   (turn-on-haskell-indentation)
   (auto-complete-mode -1)
+
+                                        ; Proper function detection
   (haskell-decl-scan-mode 1)
+
+                                        ; Linting
+  (require 'hs-lint)
+  (setq hs-lint-replace-with-suggestions t)
+  (rainbow-delimiters-mode 1)
+  (local-set-key "\C-cl" 'hs-lint)
+
+                                        ; Check on save
   (if-let* ((adv (assq 'ghc-check-syntax-on-save
                        (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
@@ -85,118 +98,11 @@
   )
 (defvar-local haskell-tags-file-dir nil)
 (fset 'haskell-cabal--find-tags-dir-old (symbol-function 'haskell-cabal--find-tags-dir))
-(defun haskell-cabal--find-tags-dir ()
-  "Override the tags path"
-  (or haskell-tags-file-dir (funcall 'haskell-cabal--find-tags-dir-old)))
-
-(defun haskell-jump-src-to-test ()
-  "Being in source jump th the corresponding test"
-  (interactive)
-  (find-file (haskell-corresponding-test (buffer-file-name))))
-
-(defun haskell-corresponding-test (path)
-  "Find a corresponding test file. If the cabal file is
-/a/test.cabal and path is /a/b/c/d/e/f.hs we will try in order:
-/a/tests/b/c/f.hs /a/tests/b/f.hs, /a/tests/f.h,
-/a/tests/b/c/d/f.hs, /a/tests/b/c/f.hs, ..."
-  (if-let* ((cabal-file (haskell-cabal-find-file)))
-      (let* ((cabal-dir (file-name-directory cabal-file))
-             (nondir (file-name-nondirectory path))
-             (subpath (save-match-data
-                        (split-string
-                         (replace-regexp-in-string
-                          cabal-dir ""
-                          (directory-file-name
-                           (file-name-directory path)))
-                         "/")))
-             (rsubpath (reverse subpath))
-             (retfn (lambda (x) (concat cabal-dir
-                                   "tests/"
-                                   (mapconcat 'identity x "/")
-                                   (if x "/" "") nondir)))
-
-                                        ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
-             (defret (funcall retfn subpath))
-             (ret (funcall retfn subpath)))
-        ;; Reduce subpath until it's null then reduce rsubpath.
-        (while (and rsubpath (not (file-exists-p ret)))
-          (if (not subpath)
-              (setq rsubpath (cdr rsubpath)
-                    subpath (reverse rsubpath))
-            (setq subpath (cdr subpath)))
-          (setq ret (funcall retfn subpath)))
-        (if rsubpath ret defret))
-    (error "Not in a cabal project.")))
 
 (defun move-keymap-to-top (mode)
   (let ((map (assq mode minor-mode-map-alist)))
     (assq-delete-all mode minor-mode-map-alist)
     (add-to-list 'minor-mode-map-alist map)))
-
-(defun haskell-test-to-src ()
-  (let ((cabal-file (haskell-cabal-find-file))
-        (testname (file-name-base (buffer-file-name))))
-    (if (or (not cabal-file)) (error "Not in haskell project.")
-      (with-current-buffer (find-file-noselect cabal-file)
-        (save-excursion
-          (goto-char (point-min))            ;XXX: we asume the first
-                                        ;hs-source-dirs encountered is
-                                        ;the right one
-          (let* ((src-dirs (haskell-cabal-subsection-entry-list
-                            (haskell-cabal-section) "hs-source-dirs"))
-                 (modules (haskell-cabal-subsection-entry-list
-                           (haskell-cabal-section) "exposed-modules"))
-                 (mod-paths (delete-if-not
-                             (lambda (x) (string= testname (file-name-base x)))
-                             (mapcar 'haskell-cabal-module-to-filename modules)))
-                 (full-paths (apply 'append
-                                    (mapcar
-                                     (lambda (dir)
-                                       (mapcar (lambda (mp)
-                                                 (concat default-directory "/" dir "/" mp))
-                                               mod-paths))
-                                     src-dirs))))
-            (delete-if-not 'file-exists-p full-paths)))))))
-
-(defmacro with-cabal-file-buffer (&rest body)
-  `(let ((cabal-file (haskell-cabal-find-file)))
-     (if (null cabal-file) (error "Not in haskell project.")
-       (with-current-buffer (find-file-noselect cabal-file)
-         ,@body))))
-
-(defun haskell-jump-test-to-src ()
-  (interactive)
-  (let ((srcs (haskell-test-to-src)))
-    (if (not srcs) (error "Couldn't find sources from test file (maybe not in .cabal?)." )
-      (find-file (car srcs)))))
-
-(defun haskell-toggle-src-test ()
-  (interactive)
-  (if (not (haskell-cabal-find-file)) (error "Not in haskell project")
-    (if (member "tests" (split-string (buffer-file-name) "/"))
-        (haskell-jump-test-to-src) (haskell-jump-src-to-test))))
-
-(defun haskell-cabal-get-key (key)
-  (haskell-cabal-subsection-entry-list (haskell-cabal-section) key))
-
-(defun haskell-infer-module-name ()
-  "Infer the module name. (used in yasnippet)"
-  (save-match-data
-    (car
-     (let ((fname (buffer-file-name)))
-       (with-cabal-file-buffer
-        (mapcar
-         (lambda (src-dir)
-           (replace-regexp-in-string
-            "\\.hs$" ""
-            (replace-regexp-in-string
-             "/" "."
-             (substring fname (+ 1 (length src-dir))))))
-         (delete-if-not
-          (lambda (x) (string-prefix-p x fname))
-          (mapcar
-           (apply-partially 'concat default-directory)
-           (haskell-cabal-get-key "hs-source-dirs")))))))))
 
 (defvar align-haskell-arrows-list '(haskell-arrows
                                     (regexp   . "[^-=!^&*+<>/| \t\n]\\(\\s-*\\)->\\(\\s-*\\)\\([^= \t\n]\\|$\\)")
@@ -205,167 +111,8 @@
                                     (tab-stop . nil)
                                     (modes    . (haskell-mode))))
 
-(require 'hs-lint)
-(defun my-haskell-mode-hook ()
-  (setq hs-lint-replace-with-suggestions t)
-  (rainbow-delimiters-mode 1)
-  (local-set-key "\C-cl" 'hs-lint))
-
-(defun pair-list (lst)
-  (let ((iter lst) (ret nil))
-    (while iter
-      (setq ret (cons (cons (car iter) (cadr iter)) ret))
-      (setq iter (cddr iter)))
-    (reverse ret)))
-
-(defun haskell-collect-imports (&optional buffer)
-  (let ((buf (or buffer (current-buffer))) (ret nil))
-    (save-excursion
-      (goto-char (point-min))
-      (while (search-forward-regexp "^import .*$" nil t)
-        (setq ret (cons (buffer-substring (match-beginning 0) (match-end 0)) ret))))
-    ret))
-
-(defun haskell-send-imports-internal (process imports done)
-  (if (null imports) (and done (funcall done))
-    (haskell-process-queue-command
-     process
-     (make-haskell-command
-      :state (list (car imports) process (cdr imports) done)
-      :go (lambda (state)
-            (message (concat "Importing: " (car state)))
-            (haskell-process-send-string (cadr state) (car state)))
-      :live (lambda (state response) nil)
-      :complete (lambda (state response)
-                  (apply 'haskell-send-imports-internal (cdr state)))))))
-
-(defun haskell-process-load-file-and-then-imports ()
-  (interactive)
-  (call-interactively 'haskell-process-load-file)
-  (haskell-send-imports (haskell-process)))
-
-(defun haskell-send-imports (process &optional buffer done)
-  (haskell-send-imports-internal process (haskell-collect-imports buffer) done))
-
-(add-hook 'haskell-mode-hook 'my-haskell-mode-hook)
-
-(defun haskell-jump-to-or-insert-defininition ()
-  "Look for the last function declaration before the point. If
-there is a definion alread jump to that. If not insert one."
-  (interactive)
-  (if-let* ((decl-pos (save-excursion
-                        (end-of-line)
-                        (haskell-previous-declaration-search)))
-            (fun-name (match-string 1))
-            (def-pos (or (haskell-find-definition fun-name decl-pos)
-                         (progn
-                           (haskell-make-available-line)
-                           (haskell-insert-function-stump fun-name)))))
-      (goto-char def-pos)))
-
-(defun haskell-make-available-line ()
-  "Find a blank line suitable for inserting a function
-definition. If there seems to be none before the next block of
-code create one."
-  (end-of-line)
-  (when (re-search-forward "^\\($\\|.\\)" nil t)
-    (unless (looking-back "\n")
-      (beginning-of-line) (save-excursion (insert "\n")))
-    (beginning-of-line)))
-
-(defun haskell-insert-function-stump (fun-name)
-  "Insert a function definition stump."
-  (insert fun-name) (insert " ")
-  (save-excursion (insert " = undefined")))
-
-(defun haskell-previous-declaration-search ()
-  "Search backward for a function declaration."
-  (save-excursion
-    (re-search-backward "^\\([[:alnum:]]*\\) ::")))
-
-(defun haskell-find-definition (func-name &optional decl-point)
-  "Search for the definition of FUNC-NAME starting at DECL-POINT
-or the beginning of the buffer. Retrn the resulting position. The
-return value is the point before the = sign."
-  (save-excursion
-    (goto-char (or decl-point (point-min)))
-    (when (re-search-forward
-           (concat "^\\(" func-name "\\)\\( +[[:alnum:]_]+\\)* *=") nil t)
-      (if (looking-back " =") (backward-char 2) (backward-char 1))
-      (point))))
-
-(defun haskell-beginning-of-defun ()
-  (save-match-data (re-seach-backwards "^[[:alnum:]]+")))
-
-
-(defun haskell-debug-parse-stopped-at (string)
-  "Parse the location stopped at from the given string.
-
-For example:
-
-Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
-
-"
-  (let ((index (string-match "Stopped in [^ ]+, \\([^:]+\\):\\(.+\\)\n?"
-                             string)))
-    (when index
-      (list :path (match-string 1 string)
-            :span (haskell-debug-parse-span (match-string 2 string))
-            :types (cdr (haskell-debug-split-string (substring string index)))))))
 
 (add-to-list 'haskell-font-lock-keywords "forall")
-
-;; Copy the current function in foo and replace the global type
-;; variables with concrete types.d
-;;
-;; (with-current-buffer "EquivCls.hs"
-;;   (save-restriction
-;;     (narrow-to-defun)
-;;     (let ((fun-body (buffer-string)))
-;;       (with-current-buffer "foo"
-;;         (delete-region (point-min) (point-max))
-;;         (insert fun-body)
-;;         ;; List of lists of typevars
-;;         (let ((typevars
-;;                (let* ((arg-rx " *\\([[:alnum:]']+\\) *")
-;;                       (funcall-rx (concat ":: forall *\\(\\(" arg-rx "\\)+ \\) *\.")))
-;;                  (goto-char (point-min))
-;;                  (let (ret)
-;;                    ;; Find each function call
-;;                    (while (search-forward-regexp funcall-rx nil t)
-;;                      (add-to-list
-;;                       'ret
-;;                       ;;Narrow to call and get arguments
-;;                       (save-restriction
-;;                         (narrow-to-region (match-beginning 1) (match-end 1))
-;;                         (goto-char (point-min))
-;;                         (let (ret)
-;;                           (save-match-data
-;;                             (while (search-forward-regexp arg-rx nil t)
-;;                               ;; Get each argument
-;;                               (add-to-list 'ret
-;;                                            (buffer-substring-no-properties
-;;                                             (match-beginning 1) (match-end 1))))
-;;                             (reverse ret))))))
-;;                    (delete-region (match-beginning 0) (match-end 0))
-;;                    (reverse ret))))
-;;               ;; Transformation of typevars
-;;               (typevar-trans (mapcar (lambda (x) (cons (concat "\\<" x "\\>")
-;;                                                   (concat "(TypeVar " x ")")))
-;;                                      (car typevars)))
-;;               (type-regions (let (ret)
-;;                               (save-match-data
-;;                                 (while (search-forward-regexp "::\\(\\(.\\|\n\\)*?\\)=" nil t)
-;;                                   (add-to-list 'ret (cons (match-beginning 1) (match-end 1))))
-;;                                 (reverse ret)))))
-;;           (dolist (l type-regions)
-;;             (save-restriction
-;;               (narrow-to-region (car l) (cdr l))
-;;               (dolist (trans typevar-trans)
-;;                 (replace-regexp (car trans) (cdr trans))))))))))
-
-
-;; start tensorflow: (let ((session '((name . "tensorflow") (cabal-dir . "/Users/drninjabatman/Scratch/haskell/")))) (setq haskell-sessions (list session)) (switch-to-buffer "*haskell-process-log*") (haskell-process-start (setq haskell-session session))))
 
 ;; OVERRIDE
 (defun haskell-session-interactive-buffer (s)
@@ -386,254 +133,6 @@ Stopped in Main.main, /home/foo/project/src/x.hs:6:25-36
           (haskell-interactive-switch)
           buffer)))))
 
-(defun stack-root (dir-root)
-  (let* ((dir (abbreviate-file-name dir-root))
-         (user (nth 2 (file-attributes dir))))
-    ;; Look for the first dir that contains stack.yaml or does not
-    ;; belong to the user
-    (while (and dir
-                (not (file-exists-p (concat dir "/stack.yaml")))
-                (= user (nth 2 (file-attributes dir))))
-      (setq dir (let ((next (file-name-directory (directory-file-name dir))))
-                  (unless (string= dir next) next))))
-    (or dir dir-root)))
-
-
-;; GUD
-;;
-;; M-x gud-ghci<RET>stack ghci
-(defmacro with-gud-comint-layer-light (body)
-  `(let ((comint-prompt-regexp haskell-prompt-regexp)
-         (gud-comint-buffer (haskell-interactive-buffer)))
-     (flet ((comint-dynamic-complete-filename () (error "Unsupported completion"))
-            (comint-input-sender () (error "Unsupported, bad gud mode"))
-            (comint-interrupt-subjob () (error "Should support"))
-            (comint-line-beginning-position () (error "Unsupported completion"))
-            (comint-output-filter (proc str) (haskell-process-filter proc str))
-            (comint-stop-subjob () (error "Unsupported, bad target name"))
-            (comint-update-fence ())    ; Internal to comint
-            (make-comint (a b c d e) (haskell-session)))
-       ,@body)))
-
-(defmacro haskell-gud-def (func cmd key &optional doc)
-  `(gud-def
-    (lambda (&rest args) (with-gud-comint-layer-light (apply ,func args)))
-    ,cmd ,key ,doc))
-
-(defun gud-display-frame ()
-  "Find and obey the last filename-and-line marker from the debugger.
-Obeying it means displaying in another window the specified file and line."
-  (interactive)
-  (flet ((col-pos (col) (save-excursion (beginning-of-line) (+ col (point)))))
-    (when gud-last-frame
-      (gud-set-buffer)
-      ;; gud-last-frame => (file . line)
-      (cond
-       ((not (listp (cdr gud-last-frame)))
-        (gud-display-line (car gud-last-frame) (cdr gud-last-frame)))
-       ;; gud-last-frame => (file line begin-column end-column)
-       ((and
-         (= 4 (length gud-last-frame))
-         (every #'numberp (cdr gud-last-frame)))
-        (let* ((file (car gud-last-frame))
-               (file-buf (find-file-noselect file t))
-               (line (cadr gud-last-frame))
-               (expr-begin-col (caddr gud-last-frame))
-               (expr-end-col (cadddr gud-last-frame)))
-          (gud-display-line file line)
-          (with-current-buffer file-buf
-            (let ((expr-begin (col-pos expr-begin-col))
-                  (expr-end  (col-pos expr-end-col))
-                  (pulse-delay .30))
-              (message (concat "Expr " (buffer-substring expr-begin expr-end)))
-              (pulse-momentary-highlight-region expr-begin expr-end)))))
-       ;; TODO: gud-last-frame =>
-       ;; (file (begin-line . begin-column) (end-line . end-column))
-       ;; Anything else
-       (t (error "Unknown gud-last-frame format.")))
-      (setq gud-last-last-frame gud-last-frame
-	    gud-last-frame nil))))
-
-(defun gud-ghci-marker-filter (string)
-  (setq gud-marker-acc (if gud-marker-acc (concat gud-marker-acc string) string))
-
-  (let (start)
-    ;; Process all complete markers in this chunk.
-    (while (string-match
-	    "\\(Logged breakpoint at\\|Stopped in [^ \t\r\n]+,\\) \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\|\\)"
-	    gud-marker-acc start)
-      (setq gud-last-frame
-	    (list (match-string 1 gud-marker-acc)
-		  (string-to-number (match-string 2 gud-marker-acc))
-                  (string-to-number (match-string 3 gud-marker-acc))
-                  (string-to-number (match-string 4 gud-marker-acc)))
-	    start (match-end 0)))
-
-    ;; Search for the last incomplete line in this chunk
-    (while (string-match "\n" gud-marker-acc start)
-      (setq start (match-end 0)))
-
-    ;; If the incomplete line APPEARS to begin with another marker, keep it
-    ;; in the accumulator.  Otherwise, clear the accumulator to avoid an
-    ;; unnecessary concat during the next call.
-    (setq gud-marker-acc (substring gud-marker-acc (match-beginning 0))))
-  string)
-
-(defun gud-ghci (command-line)
-  (interactive (list (gud-query-cmdline 'gud-ghci)))
-  (require 'gud)
-  (with-gud-comint-layer
-   (when (and gud-comint-buffer
-	      (buffer-name gud-comint-buffer)
-	      (get-buffer-process gud-comint-buffer)
-	      (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
-     (gdb-restore-windows)
-     (error
-      "Multiple debugging requires restarting in text command mode"))
-
-   (gud-common-init command-line nil 'gud-ghci-marker-filter)
-   (setq-local gud-minor-mode 'ghci)
-   (setq paragraph-start comint-prompt-regexp)
-   (comint-send-string (get-buffer-process (current-buffer))
-                       ":set prompt \"> \"\n:print '\\n'\n")
-
-   (haskell-gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
-   ;; TODO: put _result=... line to minibuffer.
-   (haskell-gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
-   (haskell-gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
-   (haskell-gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
-   (haskell-gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
-   (haskell-gud-def gud-up     ":back"           "<" "Up one stack frame.")
-   (haskell-gud-def gud-down   ":forward"        ">" "Down one stack frame.")
-   (haskell-gud-def gud-run    ":trace %e"       "t" "Trace expression.")
-   (haskell-gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
-   (run-hooks 'gud-ghci-mode-hook)))
-
-(defvar gud-ghci-command-name "stack repl")
-(require 'gud)
-(defun gud-format-command (str arg)
-  (let ((insource (not (eq (current-buffer) gud-comint-buffer)))
-	(frame (or gud-last-frame gud-last-last-frame))
-	(buffer-file-name-localized
-         (and (buffer-file-name)
-              (or (file-remote-p (buffer-file-name) 'localname)
-                  (buffer-file-name))))
-	result)
-    (while (and str
-		(let ((case-fold-search nil))
-		  (string-match "\\([^%]*\\)%\\([adefFlpcmy]\\)" str)))
-      (let ((key (string-to-char (match-string 2 str)))
-	    subst)
-	(cond
-	 ((eq key ?f)
-	  (setq subst (file-name-nondirectory (if insource
-						  buffer-file-name-localized
-						(car frame)))))
-	 ((eq key ?F)
-	  (setq subst (file-name-base (if insource
-                                          buffer-file-name-localized
-                                        (car frame)))))
-	 ((eq key ?d)
-	  (setq subst (file-name-directory (if insource
-					       buffer-file-name-localized
-					     (car frame)))))
-	 ((eq key ?l)
-	  (setq subst (int-to-string
-		       (if insource
-			   (save-restriction
-			     (widen)
-			     (+ (count-lines (point-min) (point))
-				(if (bolp) 1 0)))
-			 (cdr frame)))))
-	 ((eq key ?e)
-	  (setq subst (gud-find-expr)))
-	 ((eq key ?a)
-	  (setq subst (gud-read-address)))
-	 ((eq key ?c)
-	  (setq subst
-                (gud-find-class
-                 (if insource
-                     (buffer-file-name)
-                   (car frame))
-                 (if insource
-                     (save-restriction
-                       (widen)
-                       (+ (count-lines (point-min) (point))
-                          (if (bolp) 1 0)))
-                   (cdr frame)))))
-	 ((eq key ?p)
-	  (setq subst (if arg (int-to-string arg))))
-
-         ;; My additions here
-         ((eq key ?m)
-          (setq subst
-                (gud-find-module
-                 (if insource
-                     (buffer-file-name)
-                   (car frame))
-                 (if insource
-                     (save-restriction
-                       (widen)
-                       (+ (count-lines (point-min) (point))
-                          (if (bolp) 1 0)))
-                   (cdr frame)))))
-
-         ((eq key ?y)
-          (setq subst
-                (int-to-string
-	         (if insource
-	             (save-restriction (widen) (current-column))
-	           (cdr frame))))))
-
-	(setq result (concat result (match-string 1 str) subst)))
-      (setq str (substring str (match-end 2))))
-    ;; There might be text left in STR when the loop ends.
-    (concat result str)))
-
-(defun gud-find-module (f _line)
-  (save-excursion
-    (save-restriction
-      (save-match-data
-        (with-current-buffer (get-file-buffer f)
-          (goto-char (point-min))
-          (if (re-search-forward "^module[[:space:]]+\\([^[:space:](]+\\)" nil t nil)
-              (match-string-no-properties 1)
-            ""))))))
-
-(setq haskell-font-lock-symbols-alist
-      '(("Integer" . "ℤ")
-        ("Bool" . "𝔹")
-        ("Rational" . "ℚ")
-        ("++" . "⧺")
-        (">>" . "⨠")
-        ("<>" . "•")
-        ("\\" . "λ")
-        ("not" . "¬")
-        ("->" . "→")
-        ("<-" . "←")
-        ("=>" . "⇒")
-        ("()" . "∅")
-        ("==" . "≡")
-        ("/=" . "≢")
-        (">=" . "≥")
-        ("<=" . "≤")
-        ("!!" . "‼")
-        ("&&" . "∧")
-        ("||" . "∨")
-        ("sqrt" . "√")
-        ("undefined" . "⊥")
-        ("pi" . "π")
-        ("~>" . "⇝") ;; Omega language
-        ;; ("~>" "↝") ;; less desirable
-        ("-<" . "↢") ;; Paterson's arrow syntax
-        ;; ("-<" "⤙") ;; nicer but uncommon
-        ("::" . "∷")
-        ("." "∘" ; "○"
-         ;; Need a predicate here to distinguish the . used by
-         ;; forall <foo> . <bar>.
-         haskell-font-lock-dot-is-not-composition)
-        ("forall" . "∀")))
-
 (require 'align)
 (add-to-list 'align-rules-list
              '(haskell-types
@@ -651,51 +150,5 @@ Obeying it means displaying in another window the specified file and line."
              '(haskell-left-arrows
                (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                (modes quote (haskell-mode literate-haskell-mode))))
-
-(require 'haskell-modules)
-;;;###autoload
-(defun haskell-add-import (module)
-  (interactive (list (completing-read
-                      "Module: "
-                      (haskell-session-all-modules
-                       (haskell-modules-session)))))
-  (save-restriction
-    (widen)
-    (save-excursion
-      (goto-char (point-max))
-      (haskell-navigate-imports)
-      (insert (concat "import " module "\n")))))
-
-(defun flycheck-type-of-hole (&optional pos)
-  "Get the type of the hole at POS.
-
-POS defaults to `point'."
-  (-when-let* ((errors (flycheck-overlay-errors-at (or pos (point)))))
-    (with-temp-buffer
-      (insert (flycheck-error-message (car errors)))
-      (goto-char (point-min))
-      (save-match-data
-        (when (search-forward-regexp
-               "Found hole: _[[:alnum:]_']* :: \\([[:alnum:]_']+\\)"
-               nil t)
-          (match-string 1))))))
-
-(defun haskell-check-module-name ()
-  (interactive)
-  (save-match-data
-    (save-excursion
-      (goto-char (point-min))
-      (when (re-search-forward flycheck-haskell-module-re nil t)
-        (when-let ((decl (match-string-no-properties 1))
-                   (decl-pos (match-beginning 1))
-                   (inf (haskell-infer-module-name)))
-          (unless (string= inf decl)
-            (goto-char decl-pos)
-            (let ((flycheck-highlighting-mode 'symbols)
-                  (line (current-line))
-                  (col (current-column)))
-              (flycheck-add-overlay
-               (flycheck-error-new-at line col 'error
-                                      (format "Expected module name %s" inf))))))))))
 
 (provide 'fd-haskell)
