@@ -24,6 +24,6 @@
 	     js2-mode))
   (add-hook m 'fd-tagging-hook))
 
-(global-set-key (kbd "M-.") 'ggtags-find-tag-dwim)
+;; (global-set-key (kbd "M-.") 'ggtags-find-tag-dwim)
 
 (provide 'fd-tags)

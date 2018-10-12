@@ -1,3 +1,5 @@
+;; Install haskell packages: hasktags stylish-haskell
+
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
 ;; Make sure our mode overrides interactive-haskell-mode
@@ -54,6 +56,15 @@
     (define-key map (kbd "C-c i") 'haskell-jump-to-or-insert-defininition)
     map)
   "Keymap for using `interactive-haskell-mode'.")
+
+(defun haskell-interactive-haskell-mode-hook-fd ()
+  (define-key
+    haskell-interactive-mode-map
+    (kbd "M-.")
+    'haskell-mode-jump-to-def-or-tag))
+
+(add-hook 'haskell-interactive-mode-hook 'haskell-interactive-haskell-mode-hook-fd)
+
 ;;;###autoload
 (define-minor-mode drninjabatmans-haskell-mode
   "Some extras for haskell-mode."
@@ -653,12 +664,19 @@ Obeying it means displaying in another window the specified file and line."
                (modes quote (haskell-mode literate-haskell-mode))))
 
 (require 'haskell-modules)
+
+(defun haskell-all-project-modules ()
+  (split-string
+          (shell-command-to-string
+           (format
+            "find '%s' \\( -name '.#*' -prune \\) -o -name '*.hs' -exec sed -n 's/^\\(import\\|module\\)\\s*\\(qualified\\s*\\|\\)\\([a-zA-Z.]*\\).*/\\3/p' {} \\+ | sort | uniq"
+            (expand-file-name (stack-root default-directory))))))
+
 ;;;###autoload
 (defun haskell-add-import (module)
   (interactive (list (completing-read
                       "Module: "
-                      (haskell-session-all-modules
-                       (haskell-modules-session)))))
+                      (haskell-all-project-modules))))
   (save-restriction
     (widen)
     (save-excursion
