@@ -361,5 +361,43 @@ ignore buffers with."
 
 (setq enable-local-variables :all)
 (setq helm-buffer-skip-remote-checking t)
+
+(defun flet-wrap-to-flet (tmp-sym binding)
+  "Given a symbol that points to the real function in TMP-SYM and
+a flet binding in BINDING `(FN-SYM (OLD-FUNC-SYM ARGS...)
+BODY...)' construct the final flet binding (see `flet-wrap')"
+  (let* ((sym (car binding))
+         (all-args (cadr binding))
+         (old-sym (car all-args))
+         (real-args (cdr all-args))
+         (fn-body (cddr binding))
+         (newsym (gensym (symbol-name sym))))
+    (list sym real-args
+          ;; Put to function table
+          `(flet ((,old-sym () nil))
+             ;; Rebind
+             (letf (((symbol-function (quote ,old-sym))
+                     (symbol-function (quote ,tmp-sym))))
+               ,@fn-body)))))
+
+(defmacro flet-wrap (bindings &rest body)
+  "Within the body of the function the bindings will redefine
+certain functions. The first argument of each binding is the
+original function. For example
+
+(defun a () \"a\" \"a\")
+(flet-wrap ((a (old-a) (concat \"new \" (old-a)))) (a))
+> \"new a\"
+(a)
+> \"a\"
+"
+  (let ((tmp-syms (mapcar (lambda (b) (gensym (car b))) bindings)))
+    `(flet ,(mapcar (lambda (s) (list s nil nil)) tmp-syms)
+       (letf ,(mapcar* (lambda (ts b) `((symbol-function (quote ,ts))
+                                   (symbol-function (quote ,(car b)))))
+                       tmp-syms bindings)
+         (flet ,(mapcar* #'flet-wrap-to-flet tmp-syms bindings)
+           ,@body)))))
+
 (require 'helm-swoop)
 (provide 'fd-misc)
