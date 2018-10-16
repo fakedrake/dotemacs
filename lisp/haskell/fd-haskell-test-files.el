@@ -41,10 +41,11 @@
   (if (not (haskell-cabal-find-file)) (error "Not in haskell project")
     (if (member "tests" (split-string (buffer-file-name) "/"))
         (haskell-jump-test-to-src) (haskell-jump-src-to-test))))
-
-(defun haskell-cabal--find-tags-dir ()
+(defun haskell-cabal--find-tags-dir-advice (old-fn)
   "Override the tags path"
-  (or haskell-tags-file-dir (funcall 'haskell-cabal--find-tags-dir-old)))
+  (or haskell-tags-file-dir (funcall old-fn)))
+(advice-add 'haskell-cabal--find-tags-dir
+            :around #'haskell-cabal--find-tags-dir-advice)
 
 (defun haskell-jump-src-to-test ()
   "Being in source jump th the corresponding test"

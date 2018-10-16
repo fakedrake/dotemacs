@@ -40,4 +40,16 @@
       (haskell-process-file-loadish cmd nil buf)
       (delete-file tmp))))
 
+(defun fd-haskell-mode-jump-to-def-or-tag-lenient (&optional _next-p)
+  (interactive)
+  (flet-wrap
+   ((haskell-ident-at-point (old) (or (old) (symbol-at-point))))
+   (haskell-mode-jump-to-def-or-tag)))
+
+(defun fd-haskell-interactive-mode-hook ()
+  (define-key haskell-interactive-mode-map
+    (kbd "M-.") 'fd-haskell-mode-jump-to-def-or-tag-lenient))
+
+(add-hook 'haskell-interactive-mode-hook 'fd-haskell-interactive-mode-hook)
+
 (provide 'fd-haskell-interactive)
