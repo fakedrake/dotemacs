@@ -151,4 +151,25 @@
                (regexp . "\\(\\s-+\\)\\(<-\\|←\\)\\s-+")
                (modes quote (haskell-mode literate-haskell-mode))))
 
+(defun haskell-doc-mode-print-current-symbol-info ()
+  "Print the type of the symbol under the cursor.
+
+This function is run by an idle timer to print the type
+ automatically if `haskell-doc-mode' is turned on."
+  (and haskell-doc-mode
+       (haskell-doc-in-code-p)
+       (not haskell-mode-interactive-prompt-state)
+       (not (eobp))
+       (not executing-kbd-macro)
+       ;; Having this mode operate in the minibuffer makes it impossible to
+       ;; see what you're doing.
+       (not (eq (selected-window) (minibuffer-window)))
+       ;; not in string or comment
+       ;; take a nap, if run straight from post-command-hook.
+       (if (fboundp 'run-with-idle-timer) t
+         (sit-for haskell-doc-idle-delay))
+       ;; good morning! read the word under the cursor for breakfast
+       (string= (haskell-ident-at-point) (car haskell-doc-last-data))
+       (haskell-doc-current-info)))
+
 (provide 'fd-haskell)

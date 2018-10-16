@@ -33,23 +33,27 @@
 (defun haskell-cabal-get-key (key)
   (haskell-cabal-subsection-entry-list (haskell-cabal-section) key))
 
+(defun haskell-module-name (src-dir)
+  (replace-regexp-in-string
+   "\\.hs$" ""
+   (replace-regexp-in-string
+    "/" "."
+    (substring fname (+ 1 (length src-dir))))))
+
 (defun haskell-infer-module-name ()
   "Infer the module name. (used in yasnippet)"
   (save-match-data
-    (car
-     (let ((fname (buffer-file-name)))
-       (with-cabal-file-buffer
-        (mapcar
-         (lambda (src-dir)
-           (replace-regexp-in-string
-            "\\.hs$" ""
-            (replace-regexp-in-string
-             "/" "."
-             (substring fname (+ 1 (length src-dir))))))
-         (delete-if-not
-          (lambda (x) (string-prefix-p x fname))
-          (mapcar
-           (apply-partially 'concat default-directory)
-           (haskell-cabal-get-key "hs-source-dirs")))))))))
+    (let ((fname (buffer-file-name)))
+      (if (haskell-cabal-find-file)
+          (car
+           (with-cabal-file-buffer
+            (mapcar
+             haskell-module-name
+             (delete-if-not
+              (lambda (x) (string-prefix-p x fname))
+              (mapcar
+               (apply-partially 'concat default-directory)
+               (haskell-cabal-get-key "hs-source-dirs"))))))
+        (file-name-base fname)))))
 
 (provide 'fd-haskell-modules)
