@@ -44,6 +44,7 @@
 (timed-require 'fd-tags)
 (timed-require 'fd-lisp)
 (timed-require 'fd-cc-mode)
+(timed-require 'fd-opengl)
 (timed-require 'fd-prolog)
 (timed-require 'fd-vimperator)
 (timed-require 'fd-org)

@@ -40,11 +40,13 @@ at least one .cpp file in the same directory."
 
 (add-to-list 'flycheck-clang-warnings "pedantic")
 
+(defun fakedrake-c/c++-mode-init ()
+  (irony-mode)
+  (c++-to-headers-mode))
+
 (defun fakedrake-cc-mode-init ()
   "Just some initializations I need for C"
   (rainbow-delimiters-mode)
-  (c++-to-headers-mode)
-  (irony-mode)
   ; (setq eldoc-documentation-function 'rtags-eldoc-function)
   (flycheck-mode)
   (mapc
@@ -66,12 +68,15 @@ at least one .cpp file in the same directory."
   (define-key c-mode-base-map (kbd "M-p") 'c-beginning-of-statement)
   (define-key c-mode-base-map (kbd "C-j") 'my-cc-newline-and-indent)
   (define-key c-mode-base-map (kbd "C-x <SPC>") 'gud-break)
-  (setq-local flycheck-clang-language-standard "gnu++17")
+  ; (setq-local flycheck-clang-language-standard "gnu++17")
   (c-add-style "google-like" google-like-c-style)
   (setq c-default-style "google-like" c-basic-offset 4))
 
 (setq compilation-scroll-output t)
-(add-hook 'c-mode-common-hook 'fakedrake-cc-mode-init)
+(add-hook 'c-mode-hook 'fakedrake-cc-mode-init)
+(add-hook 'c++-mode-hook 'fakedrake-cc-mode-init)
+(add-hook 'java-mode-hook 'fakedrake-cc-mode-init)
+
 
 (require 'c-eldoc)
 (add-hook 'c-mode-hook 'c-turn-on-eldoc-mode)
@@ -97,4 +102,16 @@ at least one .cpp file in the same directory."
       (insert contents)
       (run-hooks 'c-macro-expansion-pre-hook)
       ad-do-it)))
+
+(defun disable-ggtags-company-on-tramp-files (orig-func command &rest args)
+  "When dealing with remote files gtags-company will make tramp
+open a remote connection with every key stroke. This advice
+function will stop ggtags completion for ssh remote files."
+  (if (and (buffer-file-name)
+           (string-prefix-p "/ssh:" (buffer-file-name))
+           (eq command 'prefix))
+      'stop (apply orig-func command args)))
+(advice-add 'company-gtags :around #'disable-ggtags-company-on-tramp-files)
+(advice-add 'company-clang :around #'disable-ggtags-company-on-tramp-files)
+
 (provide 'fd-cc-mode)

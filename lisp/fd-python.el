@@ -19,14 +19,16 @@
 (defun my/python-mode-hook ()
   (define-key python-mode-map (kbd "C-c C-t")
     'fd-python-jump-between-test-and-implementation)
+  (jedi:setup)
   (define-key python-mode-map (kbd "C-c M-t") 'fd-python-run-tests)
   (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
   (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
   (define-key python-mode-map (kbd "M-q") 'python-smart-fill-paragraph)
+  (define-key jedi-mode-map (kbd "C-c d") nil)
+  (define-key jedi-mode-map (kbd "C-c r") nil)
   (local-unset-key (kbd "<backtab>"))
   (setq jedi:setup-function nil
         jedi:mode-function nil)
-  (jedi:setup)
   (add-to-list 'company-backends 'company-jedi)
   ;; Fix docstring paragraph filling
   (setq paragraph-start (concat paragraph-start "\\|\\s-*\"\"\".*$")

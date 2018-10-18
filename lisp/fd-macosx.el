@@ -39,8 +39,8 @@
       ns-function-modifier 'control)
 
 (global-set-key [kp-delete] 'delete-char) ;; sets fn-delete to be right-delete
+(set-face-font 'default "-*-Ubuntu Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 
-(set-default-font "-*-Ubuntu Mono-normal-normal-normal-*-*-*-*-*-m-0-iso10646-1")
 (require 'mailcap)
 (setcdr (assoc 'viewer
                (assoc "pdf" (assoc "application" mailcap-mime-data))) "open %s")
