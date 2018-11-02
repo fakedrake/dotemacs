@@ -84,15 +84,11 @@
 (defun fd-new-buf-extension (dir &optional default path-len)
   "Return either the last two directories, or default"
   (if dir
-      (let* ((dirs (reverse (split-string dir "/" t)))
-	     (top-dirs-raw (remove nil (subseq dirs 0 path-len)))
-	     ;; If we do not have enough dirs append "" at the end so
-	     ;; we get something that resembles an abs path.
-	     (top-dirs (if (and (< (length top-dirs-raw) (or path-len 2))
-				(not (equal "~" (car top-dirs-raw))))
-			   (reverse (cons "" (reverse top-dirs-raw)))
-			 top-dirs-raw)))
-	(mapconcat (lambda (s) (format "%s/" s)) (reverse top-dirs) nil))
+      (let* ((dirs ))
+	(mapconcat
+         (lambda (s) (format "%s/" s))
+         (reverse (seq-take (reverse (split-string dir "/" t)) 2))
+         nil))
     default))
 
 (defun add-mode-line-dirtrack ()

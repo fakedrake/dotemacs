@@ -160,6 +160,40 @@
 
 (require 'haskell-modules)
 
+(defun heads (lst)
+  (when lst
+    (cons
+     (list (car lst))
+     (mapcar
+      (lambda (x) (cons (car lst) x))
+      (heads (cdr lst))))))
+
+(defun rcons (lst c)
+  "Put C at the end of LST"
+  (if (null lst)
+      (list c)
+    (cons (car lst) (rcons (cdr lst) c))))
+
+(defun path-list-to-str (path-list)
+  "Turn a list of file names into a proper file path."
+  (string-join
+   (mapcar (lambda (x) (format "/%s" x)) path-list)))
+
+(defun roots-with (dir file)
+  "Find the project root from DIR. You will know because itsdsds
+  contains FILE."
+  (let ((default-directory dir))
+    (mapcar
+     'path-list-to-str
+     (seq-filter
+      (lambda (x)
+        (file-exists-p (path-list-to-str (rcons x file))))
+      (heads (split-string (expand-file-name dir) "/" t))))))
+
+(defun stack-root (dir)
+  (let ((roots (roots-with dir "stack.yaml")))
+    (when roots (last roots))))
+
 (defun haskell-all-project-modules ()
   (split-string
           (shell-command-to-string
