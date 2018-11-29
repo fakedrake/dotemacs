@@ -195,11 +195,15 @@
     (when roots (last roots))))
 
 (defun haskell-all-project-modules ()
-  (split-string
-          (shell-command-to-string
-           (format
-            "find '%s' \\( -name '.#*' -prune \\) -o -name '*.hs' -exec sed -n 's/^\\(import\\|module\\)\\s*\\(qualified\\s*\\|\\)\\([a-zA-Z.]*\\).*/\\3/p' {} \\+ | sort | uniq"
-            (expand-file-name (stack-root default-directory))))))
+  (-flatten
+   (mapcar
+   (lambda (path)
+     (split-string
+      (shell-command-to-string
+       (format
+        "find '%s' \\( -name '.#*' -prune \\) -o -name '*.hs' -exec sed -n 's/^\\(import\\|module\\)\\s*\\(qualified\\s*\\|\\)\\([a-zA-Z.]*\\).*/\\3/p' {} \\+ | sort | uniq"
+        (expand-file-name path)))))
+   (stack-root default-directory))))
 
 ;;;###autoload
 (defun haskell-add-import (module)

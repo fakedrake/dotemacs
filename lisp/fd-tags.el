@@ -26,4 +26,5 @@
 
 ;; (global-set-key (kbd "M-.") 'ggtags-find-tag-dwim)
 
+(setq tags-revert-without-query t)
 (provide 'fd-tags)
