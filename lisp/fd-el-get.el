@@ -26,7 +26,6 @@
         irony-mode
         google-translate
         ; rtags
-        pdf-tools
         sx
         tree-mode
         dictionary
@@ -42,7 +41,6 @@
         idris-mode
         scala-mode
 
-        ;; flycheck
 	;; ;; Elisp hepers
 	f
         slime
@@ -83,8 +81,7 @@
 	c-eldoc
 	gist
 	org-mode
-        org-ref
-        pdf-tools
+        ; org-ref
         cdlatex-mode
 	markdown-mode
 	ggtags

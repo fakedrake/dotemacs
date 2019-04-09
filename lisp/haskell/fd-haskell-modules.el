@@ -388,4 +388,20 @@
                (haskell-cabal-get-key "hs-source-dirs"))))))
         (file-name-base fname)))))
 
+(defun haskell-kill-ring-save-declared-module-name ()
+  (interactive)
+  (when-let ((mn (haskell-declared-module-name)))
+    (kill-new mn)
+    (message "In kill ring: '%s'" mn)))
+
+(defun haskell-declared-module-name ()
+  "Get the declared module name for the current module."
+  (save-excursion
+    (save-match-data
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (re-search-forward "^module[[:space:]]*\\([a-zA-Z.]*\\)")
+        (match-string-no-properties 1)))))
+
 (provide 'fd-haskell-modules)

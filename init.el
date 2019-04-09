@@ -27,6 +27,7 @@
   (timed-require 'fd-macosx))
 (timed-require 'fd-el-get)
 (timed-require 'fd-misc)
+(timed-require 'fd-fluidb)
 (timed-require 'fd-misc-programming)
 (timed-require 'fd-automode)
 (timed-require 'fd-javascript)

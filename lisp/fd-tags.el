@@ -15,7 +15,7 @@
   (ggtags-mode 1)
   (setq ggtags-mode-map-alist nil))
 
-
+;; (add-to-list 'semantic-symref-filepattern-alist '(typescript-mode "*.ts"))
 ;; (require 'rtags)
 ;; (defun fd-tagging-hook ())
 

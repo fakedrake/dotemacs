@@ -60,8 +60,8 @@ variable is set when jumping to the file using
     (dired-next-line -1)
     (dired-source-find-file)))
 
-(define-key image-mode-map (kbd "C-M-n") 'dired-source-next-file)
-(define-key image-mode-map (kbd "C-M-p") 'dired-source-prev-file)
+;; (define-key image-mode-map (kbd "C-M-n") 'dired-source-next-file)
+;; (define-key image-mode-map (kbd "C-M-p") 'dired-source-prev-file)
 (define-key dired-mode-map (kbd "RET") 'dired-source-find-file)
 
 (provide 'fd-dired)

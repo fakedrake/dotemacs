@@ -47,7 +47,18 @@
 
 (set-keyboard-coding-system 'mac-roman)
 (set-selection-coding-system 'mac-roman)
-(setq el-get-emacs "/Applications/Emacs.app/Contents/MacOS/Emacs")
-(setenv "EMACS" "/Applications/Emacs.app/Contents/MacOS/Emacs")
+(defun s-trim-right (s)
+  "Remove whitespace at the end of S."
+  (if (string-match "[ \t\n\r]+\\'" s)
+      (replace-match "" t t s)
+    s))
+
+(setq el-get-emacs
+      (concat
+       (s-trim-right
+        (shell-command-to-string
+         "find /usr/local/Cellar/emacs -name 'bin'"))
+       "/emacs"))
+(setenv "EMACS" el-get-emacs)
 
 (provide 'fd-macosx)
