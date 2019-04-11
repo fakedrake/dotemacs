@@ -1,5 +1,24 @@
 ;; Some fluidb related code.
 
+(add-hook 'text-mode-hook 'activate-fluidb-branch-mode)
+(defun activate-fluidb-branch-mode ()
+  (let ((basename (file-name-nondirectory (buffer-file-name))))
+    (when (and (s-suffix-p ".txt" basename)
+               (s-prefix-p "branch" basename))
+      (fluidb-branch-mode 1))))
+
+(defvar fluidb-branch-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-x ]") 'fluidb-next-branch)
+    (define-key map (kbd "C-x [") 'fluidb-prev-branch)
+    map)
+  "Keymap for using `interactive-haskell-mode'.")
+
+(define-minor-mode fluidb-branch-mode
+  "Some stuff for dealing with branches"
+  :lighter " fluidb-branch"
+  :keymap fluidb-branch-mode-map)
+
 (defun fluidb-open-branches (branch-num)
   "Open the file of the next branch on the right and this branch
 on the left panel, on the next branch search for the [NEW STUFF]
@@ -18,7 +37,7 @@ tag and align it with the position on the left."
 (defun fluidb-go-to-branch (fn)
   (let ((l (current-line)))
     (find-file
-     (format "branch%d.txt"
+     (format "branch%04d.txt"
              (funcall
               fn
               (string-to-number
@@ -28,8 +47,17 @@ tag and align it with the position on the left."
                  (buffer-name)))))))
     (goto-line l)))
 
-(defun fluidb-next-branch () (interactive) (fluidb-go-to-branch #'1+))
-(defun fluidb-prev-branch () (interactive) (fluidb-go-to-branch (lambda (x) (- x 1))))
+(defun fluidb-next-branch ()
+  "Jump to next branch. It is assumed that the current visited
+file has the name 'branchNUM0.txt'. Next branch is branchNUM1.txt
+where NUM1 = NUM0 + 1"
+  (interactive) (fluidb-go-to-branch #'1+))
+
+(defun fluidb-prev-branch ()
+  "Jump to previous branch. It is assumed that the current
+visited file has the name 'branchNUM0.txt'. Previous branch is
+branchNUM1.txt where NUM1 = NUM0 - 1"
+  (interactive) (fluidb-go-to-branch (lambda (x) (- x 1))))
 
 (defun col-substring (col-beg col-end)
   (save-restriction

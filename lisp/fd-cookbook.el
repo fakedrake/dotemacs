@@ -37,7 +37,9 @@
     (replace-regexp "^filesize:[0-9]+| " "")))
 
 (defun current-line (&optional pt)
-  (count-lines (point-min) (1+ (or pt (point)))))
+  (count-lines
+   (point-min)
+   (funcall (if (/= (point) (point-max)) '1+ 'identity) (or pt (point)))))
 
 (defun point-at-coordinates (col line)
   (save-excursion
