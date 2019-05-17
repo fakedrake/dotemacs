@@ -14,25 +14,62 @@
     map)
   "Keymap for using `interactive-haskell-mode'.")
 
+(make-face 'gc )
+
 (define-minor-mode fluidb-branch-mode
   "Some stuff for dealing with branches"
   :lighter " fluidb-branch"
-  :keymap fluidb-branch-mode-map)
+  :keymap fluidb-branch-mode-map
+  (setq-local fluidb-plan-dir
+              (when (buffer-file-name (current-buffer))
+                (file-name-directory (buffer-file-name (current-buffer)))))
+  (read-only-mode))
 
-(defun fluidb-open-branches (branch-num)
-  "Open the file of the next branch on the right and this branch
-on the left panel, on the next branch search for the [NEW STUFF]
-tag and align it with the position on the left."
-  (let ((bmin branch-num) (bmax (+ branch-num 1)))
-    (delete-other-windows)
-    (split-window-right)
-    (windmove-right)
-    (find-file (format "/tmp/branches/branch%d.txt" bmax))
-    (goto-char (point-min)) (search-forward "[NEW STUFF]")
-    (let ((l (current-line)))
-      (windmove-left)
-      (find-file (format "/tmp/branches/branch%d.txt" bmin))
-      (goto-line l))))
+(defun fluidb-jump-to-branch (branch &optional plan)
+  "Jump to branch BRANCH of PLAN. If no PLAN is provided then
+assume the last plan."
+  (interactive "nBranch to jump to from final plan: ")
+  (find-file (format "%s/branch%04d.txt" (fluidb-infer-plan-dir plan) branch)))
+
+(defun fluidb-kill-branch-buffers ()
+  "Kill all buffers that refer to branches"
+  (interactive)
+  (dolist (b (buffer-list))
+    (when (if-let ((bn- (buffer-file-name b)))
+              (let ((bn (file-name-nondirectory bn-)))
+                (and bn (s-suffix? ".txt" bn) (s-prefix? "branch" bn))))
+      (kill-buffer b))))
+
+(defun fluidb-available-items (dir prefix)
+  "Find all available numbers of files in a directory that have
+prefix."
+  (mapcar
+   (lambda (x)
+     (string-to-number
+      (substring (file-name-base x) (length prefix))))
+   (seq-filter (lambda (x) (s-prefix-p prefix x)) (directory-files dir))))
+
+(defun fluidb-next-new-stuff ()
+  "Look for the next branch with new stuff tag at the current line."
+  (interactive)
+  (flet ((do-next-branch
+          nil
+          (fluidb-next-branch)
+          (goto-line init-line)
+          (move-beginning-of-line nil)))
+    (let ((init-line (current-line))
+          (init-buffer (current-buffer)))
+      (do-next-branch)
+      (while (not (looking-at "\\[NEW STUFF\\]"))
+        (when (>= (count-lines (point-min) (point-max)) init-line)
+          (let ((buf (current-buffer)))
+            (bury-buffer buf)
+            (do-next-branch)))))))
+
+(defun fluidb-available-plans ()
+  (fluidb-available-items "/tmp" "branches"))
+(defun fluidb-available-branches (plan)
+  (fluidb-available-items (format "/tmp/branches%03d" plan) "branch"))
 
 (defun fluidb-go-to-branch (fn)
   (let ((l (current-line)))
@@ -44,8 +81,20 @@ tag and align it with the position on the left."
                (concat
                 (seq-filter
                  (lambda (x) (<= ?0 x ?9))
-                 (buffer-name)))))))
+                 (file-name-nondirectory (buffer-file-name))))))))
     (goto-line l)))
+
+(defun fluidb-infer-plan-dir (&optional plan-number)
+  (cond
+   (plan-number (format "/tmp/branches%03d" plan-number))
+   ((and (boundp 'fluidb-plan-dir) fluidb-plan-dir) fluidb-plan-dir)
+   (t (format "/tmp/branches%03d" (car (last (fluidb-available-plans)))))))
+
+(defun fluidb-jump-to-graph-description (&optional plan-number)
+  "Jump to a reasonable /tmp/branchesXXX/graph.txt"
+  (interactive)
+  (let ((dir (fluidb-infer-plan-dir)))
+    (find-file (format "%s/graph.txt" dir))))
 
 (defun fluidb-next-branch ()
   "Jump to next branch. It is assumed that the current visited

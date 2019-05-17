@@ -63,7 +63,7 @@
 	lua-mode
 	textile-mode
 	haskell-mode
-        ghc-mod
+        hindent
         hs-lint
 	js2-mode
 	coffee-mode
@@ -241,6 +241,10 @@
         :description "Override the shitty melpa mirror"
         :type github
         :pkgname "emacsmirror/queue")
+ (:name hindent
+        :description "Haskell indentations"
+        :type github
+        :pkgname "chrisdone/hindent")
  (:name emacs-w3m
        :description "A simple Emacs interface to w3m"
        :type cvs

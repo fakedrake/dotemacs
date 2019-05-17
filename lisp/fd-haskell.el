@@ -47,8 +47,39 @@
     (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
     (define-key map (kbd "C-c C-i") 'haskell-jump-to-or-insert-defininition)
     (define-key map (kbd "C-c i") 'haskell-jump-to-or-insert-defininition)
+    (define-key map (kbd "C-c >") 'dnb-haskell-indent-shift-right)
+    (define-key map (kbd "C-c <") 'dnb-haskell-indent-shift-left)
     map)
   "Keymap for using `interactive-haskell-mode'.")
+
+
+(defun dnb-haskell-indent-shift-right (start end &optional count)
+  (interactive
+   (if mark-active
+       (list (region-beginning) (region-end) current-prefix-arg)
+     (list (line-beginning-position) (line-end-position) current-prefix-arg)))
+  (let ((deactivate-mark nil))
+    (setq count (if count (prefix-numeric-value count) 2))
+    (indent-rigidly start end count)))
+
+(defun dnb-haskell-indent-shift-left (start end &optional count)
+  (interactive
+   (if mark-active
+       (list (region-beginning) (region-end) current-prefix-arg)
+     (list (line-beginning-position) (line-end-position) current-prefix-arg)))
+  (if count
+      (setq count (prefix-numeric-value count))
+    (setq count 2))
+  (when (> count 0)
+    (let ((deactivate-mark nil))
+      (save-excursion
+        (goto-char start)
+        (while (< (point) end)
+          (if (and (< (current-indentation) count)
+                   (not (looking-at "[ \t]*$")))
+              (user-error "Can't shift all lines enough"))
+          (forward-line))
+        (indent-rigidly start end (- count))))))
 
 (defun haskell-interactive-haskell-mode-hook-fd ()
   (define-key
@@ -74,6 +105,7 @@
         haskell-process-args-stack-ghci nil)
   (setq haskell-tags-on-save t
         haskell-stylish-on-save t)
+  (setq haskell-hoogle-command "hoogle --count=50")
   (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
     (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
@@ -98,6 +130,7 @@
   (if-let* ((adv (assq 'ghc-check-syntax-on-save
                        (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
+  (hindent-mode 1)
                                         ; (set-face-attribute 'shm-current-face nil :background nil)
   ;; (structured-haskell-mode t)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)
