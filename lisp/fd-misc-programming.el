@@ -116,6 +116,9 @@ function created this way."
                       (when (not (string= (buffer-name) "*git-commit*"))
                         (previous-window))))))))
 
+(defun fd-prog-mode-hook ()
+  (highlight-symbol-mode 1))
+(add-hook 'prog-mode-hook #'fd-prog-mode-hook)
 (require 'whitespace)
 (setq whitespace-style '(face lines-tail))
 (setq whitespace-line-column 80)

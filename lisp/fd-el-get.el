@@ -60,6 +60,7 @@
 	erc-highlight-nicknames
 
 	;; Misc
+	highlight-symbol
 	lua-mode
 	textile-mode
 	haskell-mode

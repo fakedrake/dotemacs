@@ -84,7 +84,8 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(highlight ((t (:background nil :underline t :weight bold)))))
+ '(highlight ((t (:background nil :underline t :weight bold))))
+ '(highlight-symbol-face ((t (:underline t)))))
 (put 'narrow-to-page 'disabled nil)
 
 (custom-set-variables
@@ -92,13 +93,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-agenda-files
-   (quote
-    ("~/Projects/UoE/fluidb/caching.org" "~/.track.org")))
- '(package-selected-packages (quote (edit-indirect)))
+ '(org-agenda-files '("~/Projects/UoE/fluidb/caching.org" "~/.track.org"))
+ '(package-selected-packages '(edit-indirect))
  '(safe-local-variable-values
-   (quote
-    ((compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
+   '((compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
      (compile-root . "/Users/drninjabatman/.emacs.d/")
      (compile-root . "/home/drninjabatman/Projects/cv-for-me/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
@@ -110,5 +108,5 @@
      (compile-root . "/Users/drninjabatman/Downloads/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/")
      (compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
-     (compile-root . "/Users/drninjabatman/Projects/advent/"))))
- '(tramp-syntax (quote default) nil (tramp)))
+     (compile-root . "/Users/drninjabatman/Projects/advent/")))
+ '(tramp-syntax 'default nil (tramp)))

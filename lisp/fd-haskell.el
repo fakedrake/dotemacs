@@ -1,4 +1,5 @@
 (add-to-list 'load-path (format "%s/.emacs.d/lisp/haskell" (getenv "HOME")))
+(add-to-list 'load-path (format "%s/.emacs.d/el-get/hindent/elisp/" (getenv "HOME")))
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
 (require 'fd-gud-haskell)
@@ -8,7 +9,7 @@
 (require 'fd-haskell-ligatures)
 (require 'fd-haskell-modules)
 (require 'fd-haskell-test-files)
-
+(require 'hindent)
 
 ;; Make sure our mode overrides interactive-haskell-mode
 (add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)

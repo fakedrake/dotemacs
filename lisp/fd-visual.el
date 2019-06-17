@@ -76,7 +76,8 @@
          `(font-lock-doc-face ((t (:foreground ,comment))))
          `(font-lock-doc-string-face ((t (:foreground ,comment))))
          `(link ((t (:foreground  "#729fcf" :underline t))))
-
+         `(highlight ((t (:background nil :underline t :weight bold))))
+         `(highlight-symbol-face ((t (:underline t))))
          ;; ERC
          `(erc-prompt-face ((t (:background "#f57900" :bold t :foreground "gray10"))))))))
 (set-theme)
