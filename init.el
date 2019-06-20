@@ -11,7 +11,12 @@
               (concat (symbol-name sym)
                       " finished loading at:\t%H:%M:%S.%3N")))))
 
-(let ((default-directory "/usr/local/share/emacs/site-lisp/"))
+(let ((default-directory 
+	(car
+	 (cl-remove-if-not
+	  #'file-exists-p
+	  '("/usr/share/emacs/site-lisp/"
+	    "/usr/local/share/emacs/site-lisp/")))))
   (normal-top-level-add-subdirs-to-load-path))
 
 (add-to-list 'load-path "/usr/local/bin")

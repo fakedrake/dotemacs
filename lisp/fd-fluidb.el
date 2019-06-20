@@ -20,9 +20,9 @@
   "Some stuff for dealing with branches"
   :lighter " fluidb-branch"
   :keymap fluidb-branch-mode-map
-  (setq-local fluidb-plan-dir
-              (when (buffer-file-name (current-buffer))
-                (file-name-directory (buffer-file-name (current-buffer)))))
+  (setq fluidb-plan-dir
+        (when (buffer-file-name (current-buffer))
+          (file-name-directory (buffer-file-name (current-buffer)))))
   (read-only-mode))
 
 (defun fluidb-jump-to-branch (branch &optional plan)
@@ -52,7 +52,7 @@ prefix."
 (defun fluidb-next-new-stuff ()
   "Look for the next branch with new stuff tag at the current line."
   (interactive)
-  (flet ((do-next-branch
+  (cl-flet ((do-next-branch
           nil
           (fluidb-next-branch)
           (goto-line init-line)
@@ -72,7 +72,8 @@ prefix."
   (fluidb-available-items (format "/tmp/branches%03d" plan) "branch"))
 
 (defun fluidb-go-to-branch (fn)
-  (let ((l (current-line)))
+  (let ((l (current-line))
+        (b (current-buffer)))
     (find-file
      (format "branch%04d.txt"
              (funcall
@@ -82,6 +83,10 @@ prefix."
                 (seq-filter
                  (lambda (x) (<= ?0 x ?9))
                  (file-name-nondirectory (buffer-file-name))))))))
+    (with-current-buffer b
+      (when (and (boundp 'fluidb-kill-on-jump) fluidb-kill-on-jump)
+        (kill-buffer b)))
+    (setq-local fluidb-kill-on-jump t)
     (goto-line l)))
 
 (defun fluidb-infer-plan-dir (&optional plan-number)
@@ -137,7 +142,7 @@ branchNUM1.txt where NUM1 = NUM0 - 1"
   (assert-single-line-region-active)
   (let ((cb (column-at from-pt))
         (ce (column-at to-pt)))
-    (flet ((get-st nil (col-substring cb ce)))
+    (cl-flet ((get-st nil (col-substring cb ce)))
       (let ((old-st (get-st)))
         (while (equal old-st (setq old-st (get-st)))
           (forward-line direction))))))
