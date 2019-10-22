@@ -303,4 +303,13 @@ This function is run by an idle timer to print the type
        (string= (haskell-ident-at-point) (car haskell-doc-last-data))
        (haskell-doc-current-info)))
 
+(defun haskell-flycheck-jump-to-error-file ()
+  (interactive)
+    (let ((fname
+           (with-current-buffer flycheck-error-message-buffer
+             (save-excursion
+               (goto-char (point-min))
+               (search-forward-regexp "In \"\\(.*\\.hs\\)\"")
+               (match-string 1)))))
+      (find-file fname)))
 (provide 'fd-haskell)
