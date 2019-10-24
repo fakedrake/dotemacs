@@ -34,7 +34,6 @@
         dired-hacks
         notmuch
 	s
-        popup
 	pkg-info
 	request
         auctex

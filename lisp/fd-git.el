@@ -30,7 +30,7 @@
 
 (require 'magit)
 (global-magit-file-mode t)
-(define-key magit-file-mode-map (kbd "C-x g") 'magit-file-popup)
+(define-key magit-file-mode-map (kbd "C-x g") 'magit-file-dispatch)
 (define-key magit-file-mode-map (kbd "C-x G") 'magit-status)
 
 ;; Define faces.

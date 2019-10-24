@@ -1,12 +1,9 @@
 ;; Some fluidb related code.
 
-(add-hook 'text-mode-hook 'activate-fluidb-branch-mode)
-(defun activate-fluidb-branch-mode ()
-  (let ((basename (file-name-nondirectory (buffer-file-name))))
-    (when (and (s-suffix-p ".txt" basename)
-               (s-prefix-p "branch" basename))
-      (fluidb-branch-mode 1))))
+(add-to-list 'auto-mode-alist '("branch[0-9]*.txt" . fluidb-branch-mode))
 
+(defvar fluidb-plan-dir nil)
+(defvar-local fluidb-plan-dir-local nil)
 (defvar fluidb-branch-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-x ]") 'fluidb-next-branch)
@@ -16,20 +13,84 @@
 
 (make-face 'gc )
 
-(define-minor-mode fluidb-branch-mode
-  "Some stuff for dealing with branches"
-  :lighter " fluidb-branch"
-  :keymap fluidb-branch-mode-map
+
+(define-derived-mode fluidb-branch-mode fundamental-mode "fluidb-branch"
+  "Some stuff for dealing with branches
+
+\\{fluidb-branch-mode-map}"
   (setq fluidb-plan-dir
         (when (buffer-file-name (current-buffer))
           (file-name-directory (buffer-file-name (current-buffer)))))
-  (read-only-mode))
+  ;; Make sure we are switching branches on the same tree.
+  (setq-local fluidb-plan-dir-local fluidb-plan-dir)
+  (read-only-mode)
+  (setq font-lock-defaults '(fluidb-font-lock)))
 
-(defun fluidb-jump-to-branch (branch &optional plan)
+
+(defmacro let-subst (bindings exp)
+  (pcase-dolist (`(,sym ,bind) bindings)
+    (setq exp (subst bind sym exp)))
+  exp)
+
+
+(defun preprocess-regex (exp)
+  (pcase exp
+    (`(list-of ,exp1)
+     `(: "[" ,(preprocess-regex exp1) (0+ "," ,(preprocess-regex exp1)) "]"))
+    ('node '(: "<" (1+ digit) ">"))
+    (`(,x . ,xs) `(,(preprocess-regex x) . ,(preprocess-regex xs)))
+    (_ exp)))
+
+(defmacro fluidb-rx (&rest exp)
+  (rx-to-string (preprocess-regex (cons ': exp)) t))
+
+(defvar font-lock-dependencies-face 'font-lock-dependencies-face)
+(defface font-lock-dependencies-face
+  '((default :foreground "LightSteelBlue" :weight bold))
+  "Dependencies"
+  :group 'font-lock-faces)
+(defvar font-lock-materialize-face 'font-lock-materialize-face)
+(defface font-lock-materialize-face
+  '((default :foreground "PaleGreen" :wight bold))
+  "Materialized"
+  :group 'font-lock-faces)
+(defvar font-lock-mat-state-face 'font-lock-mat-state-face)
+(defface font-lock-mat-state-face
+  '((default :foreground "yellow1" :weight bold))
+  "Materialized"
+  :group 'font-lock-faces)
+(defvar font-lock-noderef-face 'font-lock-noderef-face)
+(defface font-lock-noderef-face
+  '((default :foreground "chocolate1" :weight bold))
+  "Materialized"
+  :group 'font-lock-faces)
+(defvar font-lock-newstuff-face 'font-lock-newstuff-face)
+(defface font-lock-newstuff-face
+  '()
+  "Materialized"
+  :group 'font-lock-faces)
+
+(setq fluidb-font-lock
+      `((,(fluidb-rx (group "Materializing dependencies: ")
+                     (group (list-of node)))
+         (1 font-lock-dependencies-face)
+         (2 font-lock-noderef-face))
+        (,(fluidb-rx (group "[Before] setNodeStateSafe ")
+                     (group node) " "
+                     (group (or "Mat" "NoMat")))
+         (1 font-lock-materialize-face)
+         (2 font-lock-noderef-face)
+         (3 font-lock-mat-state-face))
+        (,(fluidb-rx "[NEW STUFF]") 0 font-lock-newstuff-face)
+        (,(fluidb-rx node) 0 font-lock-noderef-face)))
+
+(defun fluidb-jump-to-branch (branch &optional plan root-dir)
   "Jump to branch BRANCH of PLAN. If no PLAN is provided then
 assume the last plan."
   (interactive "nBranch to jump to from final plan: ")
-  (find-file (format "%s/branch%04d.txt" (fluidb-infer-plan-dir plan) branch)))
+  (find-file (format "%s/branch%04d.txt"
+                     (fluidb-infer-plan-dir plan root-dir)
+                     branch)))
 
 (defun fluidb-kill-branch-buffers ()
   "Kill all buffers that refer to branches"
@@ -53,10 +114,10 @@ prefix."
   "Look for the next branch with new stuff tag at the current line."
   (interactive)
   (cl-flet ((do-next-branch
-          nil
-          (fluidb-next-branch)
-          (goto-line init-line)
-          (move-beginning-of-line nil)))
+             nil
+             (fluidb-next-branch)
+             (goto-line init-line)
+             (move-beginning-of-line nil)))
     (let ((init-line (current-line))
           (init-buffer (current-buffer)))
       (do-next-branch)
@@ -66,10 +127,13 @@ prefix."
             (bury-buffer buf)
             (do-next-branch)))))))
 
-(defun fluidb-available-plans ()
-  (fluidb-available-items "/tmp" "branches"))
-(defun fluidb-available-branches (plan)
-  (fluidb-available-items (format "/tmp/branches%03d" plan) "branch"))
+(defun fluidb-available-plans (&optional root-dir)
+  (fluidb-available-items (fluidb-infer-root-dir root-dir) "branches"))
+(defun fluidb-available-branches (plan &optional root-dir)
+  (fluidb-available-items (format "%s/branches%03d"
+                                  (fluidb-infer-root-dir root-dir)
+                                  plan)
+                          "branch"))
 
 (defun fluidb-go-to-branch (fn)
   (let ((l (current-line))
@@ -89,16 +153,28 @@ prefix."
     (setq-local fluidb-kill-on-jump t)
     (goto-line l)))
 
-(defun fluidb-infer-plan-dir (&optional plan-number)
-  (cond
-   (plan-number (format "/tmp/branches%03d" plan-number))
-   ((and (boundp 'fluidb-plan-dir) fluidb-plan-dir) fluidb-plan-dir)
-   (t (format "/tmp/branches%03d" (car (last (fluidb-available-plans)))))))
+(defun fluidb-infer-root-dir (&optional root-dir)
+  (or root-dir
+      (when fluidb-plan-dir-local (directory-file-name fluidb-plan-dir-local))
+      (when fluidb-plan-dir (directory-file-name fluidb-plan-dir))
+      "/tmp/benchmark.out.bench_branches"))
 
-(defun fluidb-jump-to-graph-description (&optional plan-number)
+(defun fluidb-infer-plan-dir (&optional plan-number root-dir)
+  (or
+   (when plan-number
+     (format "%s/branches%03d"
+             (fluidb-infer-root-dir root-dir)
+             plan-number))
+   fluidb-plan-dir-local
+   fluidb-plan-dir
+   (format "%s/branches%03d"
+           (fluidb-infer-root-dir root-dir)
+           (car (last (fluidb-available-plans root-dir))))))
+
+(defun fluidb-jump-to-graph-description (&optional plan-number root-dir)
   "Jump to a reasonable /tmp/branchesXXX/graph.txt"
   (interactive)
-  (let ((dir (fluidb-infer-plan-dir)))
+  (let ((dir (fluidb-infer-plan-dir plan-number root-dir)))
     (find-file (format "%s/graph.txt" dir))))
 
 (defun fluidb-next-branch ()
@@ -151,5 +227,20 @@ branchNUM1.txt where NUM1 = NUM0 - 1"
   "Go backward lines until the region between the columns changes"
   (interactive "r")
   (forward-line-pred-change from-pt to-pt -1))
+
+(defun fluidb-indent-wraptrace ()
+  "Remove any indentation and indent for lines beginning with
+[Before] and [After]"
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((ind 0))
+      (while (< (point) (point-max))
+        (delete-region (point)
+                       (save-excursion (skip-chars-forward " ") (point)))
+        (when (looking-at "\\[After\\]") (setq ind (1- ind)))
+        (dotimes (i ind) (insert "  "))
+        (when (looking-at "\\[Before\\]") (setq ind (1+ ind)))
+        (end-of-line) (forward-line) (beginning-of-line)))))
 
 (provide 'fd-fluidb)
