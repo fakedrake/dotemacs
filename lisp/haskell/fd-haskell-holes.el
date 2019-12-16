@@ -12,7 +12,7 @@ POS defaults to `point'. Use `flycheck-type-of-hole' for some normalizations."
                 "Found hole: _[[:alnum:]_']* :: \\([[:alnum:]_']+\\)"
                 nil t)
                (search-forward-regexp
-                "• Found type wildcard ‘_’ standing for ‘\\(.*?\\)’"
+                "• Found type wildcard ‘_’[[:space:]]*standing for ‘\\([^’]*?\\)’"
                 nil t))
           (match-string 1))))))
 

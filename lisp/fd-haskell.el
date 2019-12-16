@@ -96,17 +96,20 @@
       (setq minor-mode-map-alist
             (cons pair (assq-delete-all mode minor-mode-map-alist))))))
 
+
+(remove-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
 ;;;###autoload
 (define-minor-mode drninjabatmans-haskell-mode
   "Some extras for haskell-mode."
   :lighter " DNB-Haskell"
   :keymap drninjabatmans-haskell-mode-map
-  (setq comment-auto-fill-only-comments nil
+  (setq comment-auto-fill-gonly-comments nil
         haskell-font-lock-symbols t
         haskell-process-args-stack-ghci nil)
   (setq haskell-tags-on-save t
         haskell-stylish-on-save t)
   (setq haskell-hoogle-command "hoogle --count=50")
+  (setq-local comment-auto-fill-only-comments nil)
   (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
     (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
   (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
@@ -139,7 +142,7 @@
   )
 (defvar-local haskell-tags-file-dir nil)
 (fset 'haskell-cabal--find-tags-dir-old (symbol-function 'haskell-cabal--find-tags-dir))
-
+(define-key haskell-interactive-mode-map (kbd "<S-return>") 'newline)
 (defun move-keymap-to-top (mode)
   (let ((map (assq mode minor-mode-map-alist)))
     (assq-delete-all mode minor-mode-map-alist)
@@ -282,26 +285,6 @@ POS defaults to `point'."
               (flycheck-add-overlay
                (flycheck-error-new-at line col 'error
                                       (format "Expected module name %s" inf))))))))))
-(defun haskell-doc-mode-print-current-symbol-info ()
-  "Print the type of the symbol under the cursor.
-
-This function is run by an idle timer to print the type
- automatically if `haskell-doc-mode' is turned on."
-  (and haskell-doc-mode
-       (haskell-doc-in-code-p)
-       (not haskell-mode-interactive-prompt-state)
-       (not (eobp))
-       (not executing-kbd-macro)
-       ;; Having this mode operate in the minibuffer makes it impossible to
-       ;; see what you're doing.
-       (not (eq (selected-window) (minibuffer-window)))
-       ;; not in string or comment
-       ;; take a nap, if run straight from post-command-hook.
-       (if (fboundp 'run-with-idle-timer) t
-         (sit-for haskell-doc-idle-delay))
-       ;; good morning! read the word under the cursor for breakfast
-       (string= (haskell-ident-at-point) (car haskell-doc-last-data))
-       (haskell-doc-current-info)))
 
 (defun haskell-flycheck-jump-to-error-file ()
   (interactive)
