@@ -133,8 +133,8 @@ that is the line."
     (insert before)
     (save-excursion (insert after))))
 
-(setq inferior-lisp-program "/usr/local/bin/swank-js")
-(setq slime-contribs '(slime-fancy))
+
+
 
 ;; Variable names
 (delete-if (lambda (c) (member c '("self" "Event"))) js2-browser-externs)

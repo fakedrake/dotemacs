@@ -15,6 +15,7 @@
 (cua-mode -1)
 (delete-selection-mode t)
 (setq backup-directory-alist (list (cons "." (my-expand-path "backup/"))))
+(setq kill-do-not-save-duplicates t)
 (set-input-method 'greek)
 (toggle-input-method)
 (setq scroll-step 1)

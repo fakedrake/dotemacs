@@ -311,5 +311,8 @@ This function is run by an idle timer to print the type
                (goto-char (point-min))
                (search-forward-regexp "In \"\\(.*\\.hs\\)\"")
                (match-string 1)))))
-      (find-file fname)))
+      (find-file fname)
+      (flycheck-clear)
+      (flycheck-buffer)))
+
 (provide 'fd-haskell)

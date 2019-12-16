@@ -15,8 +15,10 @@
   (rainbow-delimiters-mode 1)
   (define-key emacs-lisp-mode-map (kbd "M-.") 'xref-find-definitions)
   (define-key emacs-lisp-mode-map (kbd "C-M-d") 'edebug-defun))
-
+(require 'slime-autoloads)
 (add-hook 'emacs-lisp-mode-hook 'fd-elisp-hooks)
+(setq slime-contribs '(slime-fancy))
+(setq inferior-lisp-program "/usr/local/bin/sbcl")
 
 ;; ;; Slime
 ;; (require 'clojure-mode)

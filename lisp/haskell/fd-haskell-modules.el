@@ -1,7 +1,7 @@
 (require 'haskell-modules)
 
 (defconst haskell-language-pragmas
-  '("Cpp"
+  '("CPP"
     "OverlappingInstances"
     "UndecidableInstances"
     "IncoherentInstances"

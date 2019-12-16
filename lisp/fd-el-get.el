@@ -133,27 +133,6 @@
 	  :type github
 	  :pkgname "fakedrake/compilation-setup.el")
 
-   (:name swank-js
-	  :description "SLIME REPL and other development tools for in-browser JavaScript and Node.JS"
-	  :type github
-	  :pkgname "swank-js/swank-js"
-	  :depends (js2-mode slime)
-	  :after (let* ((slime-dir (el-get-package-directory "slime"))
-			(swank-js-dir (el-get-package-directory "swank-js"))
-			(slime-link (concat slime-dir "/contrib/slime-js.el"))
-			(swank-el (concat swank-js-dir "/slime-js.el"))
-			(npm-installed? (equal 0 (call-process-shell-command
-						  "npm list -g swank-js")))
-			(npm-install-cmd (format "npm install -g %s" swank-js-dir)))
-		   ;; Make sur the file is there.
-		   (unless (file-exists-p slime-link)
-		     (make-symbolic-link swank-el slime-link))
-		   (message "Installing swank-js: %s" npm-install-cmd)
-		   (unless (or npm-installed?
-			       (equal (call-process-shell-command npm-install-cmd) 0))
-		     (error "Error during swank-js install to npm. (is prefix = .... in your ~/.npmrc?)")))
-	  :features nil)
-
    (:name web-beautify
 	  :description "Beautify CSS, HTML and JS/JSON."
 	  :depends (js-beautify)
