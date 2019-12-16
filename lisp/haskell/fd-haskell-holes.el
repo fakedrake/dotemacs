@@ -18,16 +18,21 @@
      (error "No flycheck error at point.")))
 
 (defun haskell-type-of-hole (pos)
-  "Get the type of the hole at POS using flycheck as a string."
-  (if-let*
-      ((tyrx "Found type wildcard ‘_\\s_*’[[:space:]]*standing for ‘\\([^’]*\\)’")
-       (type
-        (haskell-with-current-error-buffer pos
-         (save-match-data
-           (when
-               (search-forward-regexp tyrx nil t)
-             (match-string-no-properties 1))))))
-      (replace-regexp-in-string "[\n\t ]+" " " type)))
+  "Get the type of the hole at POS using flycheck as a string.
+POS defaults to `point'. Use `flycheck-type-of-hole' for some normalizations."
+  (-when-let* ((errors (flycheck-overlay-errors-at (or pos (point)))))
+    (with-temp-buffer
+      (insert (flycheck-error-message (car errors)))
+      (goto-char (point-min))
+      (save-match-data
+        (when (or
+               (search-forward-regexp
+                "Found hole: _[[:alnum:]_']* :: \\([[:alnum:]_']+\\)"
+                nil t)
+               (search-forward-regexp
+                "• Found type wildcard ‘_’[[:space:]]*standing for ‘\\([^’]*?\\)’"
+                nil t))
+          (match-string 1))))))
 
 (defun haskell-expand-type-hole ()
   "Repace the hole at point with it's type using flychceck."
