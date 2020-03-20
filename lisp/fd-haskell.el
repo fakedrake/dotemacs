@@ -21,13 +21,16 @@
 
 (add-to-list
  'haskell-compilation-error-regexp-alist
- '("^Stopped in [^ \t\r\n]+, \\(?1:[^ \t\r\n]+?\\):\\(?2:[0-9]+\\):\\(?3:[0-9]+\\)\\(?:-\\(?4:[0-9]+\\)\\)$" 1 2 (3 . 4) 0))
+ '("^[[:space:]]+[[:word:]]+, called at \\(\\([[:word:]]*/\\)*[[:word:]]+\\.hs\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\) in " 1 2 (3 . 4) 0))
 
 (defvar hs-compilation-error-regex-alist
   ;; REGEX FILE-GROUP LINE-GROUP COLUMN-GROUP ERROR-TYPE LINK-GROUP
   '((haskell-error
      "^\\(\\(.*\\.l?hs\\):\\([0-9]*\\):\\([0-9]*\\)\\): error:$"
-     2 3 4 2 1)))
+     2 3 4 2 1)
+    (haskell-rts-stack
+     "^[[:space:]]+[[:word:]]+, called at \\(\\([[:word:]]*/\\)*[[:word:]]+\\.hs\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\) in "
+    1 3 4)))
 
 
 ;; Add hs-compilation-error-regex-alist to the appropriate lists. If
