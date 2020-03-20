@@ -243,4 +243,31 @@ branchNUM1.txt where NUM1 = NUM0 - 1"
         (when (looking-at "\\[Before\\]") (setq ind (1+ ind)))
         (end-of-line) (forward-line) (beginning-of-line)))))
 
+
+(defun profiterole-line (conf &optional profiterole-conf-file)
+  "With the point over a line in the *.profiterole.txt file"
+  (unless (s-suffix? ".profiterole.txt" (buffer-file-name))
+    (error "Not in a *.profiterole.txt file"))
+  (let* ((ws (s-split " " (current-line-string) t))
+         (sym (concat (nth 3 ws) " " (nth 4 ws)))
+         (conf-line (concat conf ": " sym "\n")))
+    (with-current-buffer (find-file-noselect
+                          (or profiterole-conf-file ".profiterole.yaml"))
+      (goto-char (point-max))
+      (insert conf-line)
+      (save-buffer))))
+
+(defvar profiterole-update-hist nil)
+(defun profiterole-update (conf)
+  (interactive
+   (list
+    (completing-read
+     "profiterole action: "
+     '("bury" "omit" "fold" "rbury" "root")
+     nil
+     t nil 'profiterole-update-hist)))
+  (profiterole-line conf)
+  (shell-command "profiterole profile.prof > /dev/null")
+  (revert-buffer nil t))
+
 (provide 'fd-fluidb)
