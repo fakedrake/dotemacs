@@ -1,19 +1,21 @@
 (add-to-list 'load-path (format "%s/.emacs.d/lisp/haskell" (getenv "HOME")))
 (add-to-list 'load-path (format "%s/.emacs.d/el-get/hindent/elisp/" (getenv "HOME")))
+(require 'haskell-indentation)
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
 (require 'fd-gud-haskell)
 (require 'fd-haskell-holes)
 (require 'fd-haskell-insert-definition)
-(require 'fd-haskell-interactive)
+; (require 'fd-haskell-interactive)
 (require 'fd-haskell-ligatures)
 (require 'fd-haskell-modules)
 (require 'fd-haskell-test-files)
+(require 'fd-haskell-comint)
 (require 'hindent)
 
 ;; Make sure our mode overrides interactive-haskell-mode
 (add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
-(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
 
 (setq haskell-process-type 'auto)
 (setq haskell-process-path-ghci "stack")
@@ -21,7 +23,7 @@
 
 (add-to-list
  'haskell-compilation-error-regexp-alist
- '("^[[:space:]]+[[:word:]]+, called at \\(\\([[:word:]]*/\\)*[[:word:]]+\\.hs\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\) in " 1 2 (3 . 4) 0))
+ '("^[[:space:]]+[[:word:]'-_]+, called at \\(\\([[:word:]]*/\\)*[[:word:]]+\\.hs\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\) in " 1 2 (3 . 4) 0))
 
 (defvar hs-compilation-error-regex-alist
   ;; REGEX FILE-GROUP LINE-GROUP COLUMN-GROUP ERROR-TYPE LINK-GROUP
@@ -46,13 +48,16 @@
 (require 'haskell-mode)
 (defvar drninjabatmans-haskell-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-x SPC") 'gud-break)
-    (define-key map (kbd "C-c C-l") 'haskell-process-load-file-and-then-imports)
-    (define-key map (kbd "C-c C-t") 'haskell-toggle-src-test)
-    (define-key map (kbd "C-c C-i") 'haskell-jump-to-or-insert-defininition)
-    (define-key map (kbd "C-c i") 'haskell-jump-to-or-insert-defininition)
-    (define-key map (kbd "C-c >") 'dnb-haskell-indent-shift-right)
-    (define-key map (kbd "C-c <") 'dnb-haskell-indent-shift-left)
+    (define-key map (kbd "C-x SPC") #'haskell-comint-set-breakpoint)
+    (define-key map (kbd "C-c C-k") #'haskell-comint-clear-buffer)
+    (define-key map (kbd "C-c C-z") #'haskell-shell-switch-to-shell)
+    (define-key map (kbd "C-c C-l") #'haskell-shell-load-file)
+    (define-key map (kbd "C-c C-r") #'haskell-shell-reload-last-file)
+    (define-key map (kbd "C-c C-t") #'haskell-toggle-src-test)
+    (define-key map (kbd "C-c C-i") #'haskell-jump-to-or-insert-defininition)
+    (define-key map (kbd "C-c i") #'haskell-jump-to-or-insert-defininition)
+    (define-key map (kbd "C-c >") #'dnb-haskell-indent-shift-right)
+    (define-key map (kbd "C-c <") #'dnb-haskell-indent-shift-left)
     map)
   "Keymap for using `interactive-haskell-mode'.")
 
@@ -85,13 +90,13 @@
           (forward-line))
         (indent-rigidly start end (- count))))))
 
-(defun haskell-interactive-haskell-mode-hook-fd ()
-  (define-key
-    haskell-interactive-mode-map
-    (kbd "M-.")
-    'haskell-mode-jump-to-def-or-tag))
+;; (defun haskell-interactive-haskell-mode-hook-fd ()
+;;   (define-key
+;;     haskell-interactive-mode-map
+;;     (kbd "M-.")
+;;     'haskell-mode-jump-to-def-or-tag))
 
-(add-hook 'haskell-interactive-mode-hook 'haskell-interactive-haskell-mode-hook-fd)
+;; (add-hook 'haskell-interactive-mode-hook 'haskell-interactive-haskell-mode-hook-fd)
 (defun move-keymap-to-top (mode)
   (let ((pair (assq mode minor-mode-map-alist)))
     (if (not pair)
@@ -115,15 +120,14 @@
   (setq-local comment-auto-fill-only-comments nil)
   (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
     (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
-  (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
-  (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
+  ;; (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
+  ;; (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
   (move-keymap-to-top 'yas-minor-mode)
   (flycheck-mode)
   (add-hook 'flycheck-after-syntax-check-hook 'haskell-check-module-name nil t)
-  (turn-on-haskell-indentation)
+  (haskell-indentation-mode t)
   (auto-complete-mode -1)
-
                                         ; Proper function detection
   (haskell-decl-scan-mode 1)
 
@@ -301,4 +305,15 @@ POS defaults to `point'."
       (flycheck-clear)
       (flycheck-buffer)))
 
+(defun haskell-process-guard-idle (old-fn &rest r)
+  (if (and (haskell-process-cmd (haskell-interactive-process))
+           (= (line-end-position) (point-max)))
+      (error "Haskell process busy")
+    (apply old-fn r)))
+(defun haskell-process-interrupt-ad (old-fn &rest r)
+  (apply old-fn r)
+  (haskell-process-reset (haskell-commands-process)))
+
+(advice-add 'haskell-process-interrupt :around #'haskell-process-interrupt-ad)
+(advice-add 'haskell-interactive-handle-expr :around #'haskell-process-guard-idle)
 (provide 'fd-haskell)

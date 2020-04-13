@@ -257,6 +257,15 @@ branchNUM1.txt where NUM1 = NUM0 - 1"
       (insert conf-line)
       (save-buffer))))
 
+(defun profiterole-prof-file (file)
+  "Get the prof as file."
+  (let ((p (reverse (s-split "/" file))))
+    (s-join
+     "/"
+     (reverse
+      (cons (format "%s.prof" (car (s-split "\\." (car p))))
+            (cdr p))))))
+
 (defvar profiterole-update-hist nil)
 (defun profiterole-update (conf)
   (interactive
@@ -267,7 +276,8 @@ branchNUM1.txt where NUM1 = NUM0 - 1"
      nil
      t nil 'profiterole-update-hist)))
   (profiterole-line conf)
-  (shell-command "profiterole profile.prof > /dev/null")
+  (let ((file (profiterole-prof-file (buffer-file-name))))
+    (shell-command (format "profiterole %s > /dev/null" file)))
   (revert-buffer nil t))
 
 (provide 'fd-fluidb)

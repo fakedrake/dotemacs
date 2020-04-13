@@ -19,6 +19,51 @@
       :complete (lambda (state response)
                   (apply 'haskell-send-imports-internal (cdr state)))))))
 
+
+(defvar-local fd-haskell-last-loaded-file nil)
+(defvar-local fd-haskell-loading-status nil)
+(defvar-local fd-haskell-restarted nil)
+(defun haskell-process-restart-ad (old-fn &rest r)
+  "Reset local variables that are continget to the state of the
+ghci process."
+  (with-current-buffer (haskell-session-interactive-buffer (haskell-session))
+    (setq-local fd-haskell-last-loaded-file nil)
+    (setq-local fd-haskell-loading-status nil))
+  (apply old-fn r))
+
+(advice-add 'haskell-process-restart :around #'haskell-process-restart-ad)
+
+(defun haskell-load-or-reload-file ()
+  (interactive)
+  (let* ((ibuf (haskell-session-interactive-buffer (haskell-session)))
+         (src-file (buffer-file-name))
+         (last-loaded-file
+          (with-current-buffer ibuf fd-haskell-last-loaded-file)))
+    (cond
+     ((eq fd-haskell-loading-status 'reload)
+      (error "Haskell process is reloading file: %s" ))
+     ((eq fd-haskell-loading-status 'load)
+      (error "Haskell process is reloading file: %s" ))
+     ((and (haskell-process) (haskell-process-cmd (haskell-process)))
+      (error "Haskell process is busy."))
+     ((string= (buffer-file-name) last-loaded-file)
+      (haskell-interactive-mode-echo
+       (haskell-session) (format "Reloading file: %s" (buffer-file-name)))
+      (with-current-buffer ibuf
+        (setq-local fd-haskell-loading-status 'reload))
+      (call-interactively 'haskell-process-reload)
+      (with-current-buffer ibuf
+        (setq-local fd-haskell-loading-status 'reload)))
+     (t
+      (haskell-interactive-mode-echo
+       (haskell-session) (format "Loading file: %s" (buffer-file-name)))
+      (with-current-buffer ibuf
+        (setq-local fd-haskell-last-loaded-file src-file)
+        (setq-local fd-haskell-loading-status 'load))
+      (call-interactively 'haskell-process-load-file)
+      (with-current-buffer ibuf
+        (setq-local fd-haskell-loading-status nil))))))
+
 (defun haskell-process-load-file-and-then-imports ()
   (interactive)
   (call-interactively 'haskell-process-load-file)
