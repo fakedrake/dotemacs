@@ -128,7 +128,7 @@ Restart the Haskell shell after changing this variable for it to take effect."
 
 ;;;###autoload
 (defun haskell-comint-clear-buffer (&optional process msg)
-  "Restart the comint process."
+  "Clear the comint buffer."
   (interactive)
   (with-current-buffer
       (process-buffer
@@ -143,7 +143,8 @@ Restart the Haskell shell after changing this variable for it to take effect."
     (when proc
       (with-current-buffer (process-buffer proc)
         (comint-kill-subjob))))
-  (haskell-comint))
+  (sleep-for 1)
+  (run-haskell-comint))
 
 ;;;###autoload
 (defun run-haskell-comint (&optional cmd dedicated show)
@@ -327,6 +328,7 @@ killed."
                  (haskell-shell--interpreter-args
                   (mapconcat #'identity args " ")))
             (with-current-buffer buffer
+              (set (make-local-variable 'haskell-shell--loaded-file) nil)
               (haskell-comint-mode))
             (when show (display-buffer buffer))
             (and internal (set-process-query-on-exit-flag process nil))))
@@ -598,6 +600,8 @@ variable.
   ;; Some GUD functionality
   (define-key haskell-comint-mode-map (kbd "C-x SPC")
     'haskell-comint-set-breakpoint)
+  (define-key haskell-comint-mode-map (kbd "C-c C-k")
+    'haskell-comint-clear-buffer)
   (set (make-local-variable 'gud-delete-prompt-marker) (make-marker))
   (set (make-local-variable 'comint-prompt-regexp)
        haskell-shell-prompt-debug-regexp)
@@ -646,12 +650,17 @@ If we fail show message MSG."
 
 ;;; Send output
 ;;;###autoload
+(defvar haskell-shell--loaded-file nil)
 (defun haskell-shell-load-file (file-name &optional process msg)
   "Load file FILE-NAME to the shell.  Use PROCESS and show friendly MSG."
   (interactive (list (or (buffer-file-name) (read-file-name "File to load: "))))
-  (haskell-shell-send-string
-   (format ":load %s" file-name)
-   (or process (haskell-shell-get-process-or-error msg))))
+
+  (let* ((proc (or process (haskell-shell-get-process-or-error msg)))
+         (buf (process-buffer proc)))
+    (if (string= file-name (with-current-buffer buf haskell-shell--loaded-file))
+      (haskell-shell-reload-last-file proc)
+    (set (make-local-variable 'haskell-shell--loaded-file) file-name)
+    (haskell-shell-send-string (format ":load %s" file-name) proc))))
 
 ;;;###autoload
 (defun haskell-shell-reload-last-file (&optional process msg)
