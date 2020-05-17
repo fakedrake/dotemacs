@@ -20,11 +20,11 @@
         helm
         helm-swoop
         ; imaxima
+        flycheck
         htmlize
         org-caldav
         oauth2
         irony-mode
-        google-translate
         ; rtags
         sx
         tree-mode
@@ -91,9 +91,8 @@
         google-c-style
         web-mode
         dtrace-script-mode
-        proof-general
+        ; proof-general
         skewer-mode
-        ein
 	))
 
 (setq
