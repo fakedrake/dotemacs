@@ -141,12 +141,22 @@
   (if-let* ((adv (assq 'ghc-check-syntax-on-save
                        (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
+  (setq-local find-tag-default-function 'haskell-find-tag-default)
   (hindent-mode 1)
                                         ; (set-face-attribute 'shm-current-face nil :background nil)
   ;; (structured-haskell-mode t)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-e") 'shm/goto-parent-end)
   )
+
+
+;; XXX: define these functions
+(put 'haskell-module-sym 'beginning-op 'beginning-of-haskell-module-sym)
+(put 'haskell-module-sym 'end-op       'end-of-haskell-module-sym)
+(put 'haskell-module-sym 'forward-op   'end-of-haskell-module-sym)
+
+(defun haskell-find-tag-default ()
+  (or (thing-at-point 'haskell-module t) (thing-at-point 'symbol t)))
 (defvar-local haskell-tags-file-dir nil)
 (fset 'haskell-cabal--find-tags-dir-old (symbol-function 'haskell-cabal--find-tags-dir))
 (define-key haskell-interactive-mode-map (kbd "<S-return>") 'newline)

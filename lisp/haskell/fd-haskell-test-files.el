@@ -37,6 +37,7 @@
       (find-file (car srcs)))))
 
 (defun haskell-toggle-src-test ()
+  "toggle between source and test files."
   (interactive)
   (if (not (haskell-cabal-find-file)) (error "Not in haskell project")
     (if (member "tests" (split-string (buffer-file-name) "/"))
@@ -68,12 +69,14 @@
                            (file-name-directory path)))
                          "/")))
              (rsubpath (reverse subpath))
-             (retfn (lambda (x) (concat cabal-dir
-                                   "tests/"
-                                   (mapconcat 'identity x "/")
-                                   (if x "/" "") nondir)))
-
-                                        ;(defret (funcall retfn (reverse (cdr (reverse rsubpath)))))
+             (retfn (lambda (x)
+                      (concat cabal-dir
+                              "tests/"
+                              (mapconcat
+                               'identity
+                               (if (string= "src" (car x)) (cdr x) x)
+                               "/")
+                              (if x "/" "") nondir)))
              (defret (funcall retfn subpath))
              (ret (funcall retfn subpath)))
         ;; Reduce subpath until it's null then reduce rsubpath.

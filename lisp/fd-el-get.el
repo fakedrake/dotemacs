@@ -50,6 +50,7 @@
 
 	;; Auto Complete packages
 	yasnippet
+        yasnippet-snippets
         company-mode
 
 	;; themes I like
