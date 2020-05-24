@@ -872,6 +872,7 @@ completion."
   "Function for `completion-at-point-functions' in `haskell-comint-mode'.
 Optional argument PROCESS forces completions to be retrieved
 using that one instead of current buffer's process."
+  (interactive)
   (setq process (or process (get-buffer-process (current-buffer))))
   (let* ((line-start (if (derived-mode-p 'haskell-comint-mode)
                          ;; Working on a shell buffer: use prompt end.

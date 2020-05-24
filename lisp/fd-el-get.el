@@ -20,7 +20,6 @@
         helm
         helm-swoop
         ; imaxima
-        flycheck
         htmlize
         org-caldav
         oauth2

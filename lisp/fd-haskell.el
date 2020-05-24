@@ -127,7 +127,6 @@
   (flycheck-mode)
   (add-hook 'flycheck-after-syntax-check-hook 'haskell-check-module-name nil t)
   (haskell-indentation-mode t)
-  (auto-complete-mode -1)
                                         ; Proper function detection
   (haskell-decl-scan-mode 1)
 
