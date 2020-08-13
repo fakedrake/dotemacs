@@ -8,7 +8,9 @@
 
 (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
 (setq reftex-plug-into-AUCTeX t)
+(setq TeX-parse-self t)
 
+(add-to-list 'LaTeX-verbatim-environments "lstlisting")
 (defun fd-latex-mode-hook ()
   (define-key LaTeX-mode-map (kbd "$") 'self-insert-command)
   (LaTeX-add-environments "align" "align*"))

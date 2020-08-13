@@ -1,5 +1,5 @@
 (add-to-list 'load-path (format "%s/.emacs.d/lisp/haskell" (getenv "HOME")))
-(add-to-list 'load-path (format "%s/.emacs.d/el-get/hindent/elisp/" (getenv "HOME")))
+; (add-to-list 'load-path (format "%s/.emacs.d/el-get/hindent/elisp/" (getenv "HOME")))
 (require 'haskell-indentation)
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
@@ -11,7 +11,8 @@
 (require 'fd-haskell-modules)
 (require 'fd-haskell-test-files)
 (require 'fd-haskell-comint)
-(require 'hindent)
+(require 'fd-floskell)
+;(require 'hindent)
 
 ;; Make sure our mode overrides interactive-haskell-mode
 (add-hook 'haskell-mode-hook 'drninjabatmans-haskell-mode)
@@ -141,7 +142,8 @@
                        (ad-get-advice-info-field #'save-buffer 'after))))
       (ad-advice-set-enabled adv nil))
   (setq-local find-tag-default-function 'haskell-find-tag-default)
-  (hindent-mode 1)
+                                        ;(hindent-mode 1)
+  (floskell-mode 1)
                                         ; (set-face-attribute 'shm-current-face nil :background nil)
   ;; (structured-haskell-mode t)
   ;; (define-key interactive-haskell-mode-map (kbd "C-M-a") 'shm/goto-parent)

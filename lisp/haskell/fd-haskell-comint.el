@@ -118,13 +118,16 @@ Restart the Haskell shell after changing this variable for it to take effect."
   :type 'string
   :group 'haskell-comint)
 
+(defun haskell-combine-and-quote-strings (strs)
+  (if (stringp strs) (list strs) (combine-and-quote-strings strs)))
+
 (defun haskell-shell-calculate-command ()
   "Calculate the string used to execute the inferior Haskell process."
   (format "%s %s"
           ;; `haskell-shell-make-comint' expects to be able to
           ;; `split-string-and-unquote' the result of this function.
-          (combine-and-quote-strings haskell-shell-interpreter)
-          (combine-and-quote-strings haskell-shell-interpreter-args)))
+          (haskell-combine-and-quote-strings haskell-shell-interpreter)
+          (haskell-combine-and-quote-strings haskell-shell-interpreter-args)))
 
 ;;;###autoload
 (defun haskell-comint-clear-buffer (&optional process msg)
@@ -582,6 +585,7 @@ variable.
        '(haskell-shell-comint-non-show-to-type-filter))
   (set (make-local-variable 'comint-output-filter-functions)
        '(ansi-color-process-output
+         haskell-pdbtrack-comint-output-filter-function
          haskell-shell-comint-watch-for-first-prompt-output-filter
          haskell-comint-postoutput-scroll-to-bottom
          comint-watch-for-password-prompt))
@@ -830,7 +834,10 @@ This is the dual operation to `haskell-string-literal-encode'."
                    (substring estr 1 -1)
                  (error "String literal must be delimited by quotes"))))
           (case-fold-search nil))
-      (replace-regexp-in-string haskell-string-literal-escapes-regexp #'haskell-string-literal-decode1 s t t))))
+      (replace-regexp-in-string
+       haskell-string-literal-escapes-regexp
+       #'haskell-string-literal-decode1
+       s t t))))
 
 ;;;###autoload
 (defun haskell-shell-complete-at-point ()
@@ -972,8 +979,10 @@ the `buffer-name'."
   :group 'haskell-comint
   :safe 'booleanp)
 
+
+
 (defcustom haskell-pdbtrack-stacktrace-info-regexp
-  "> \\([^\"(<]+\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_<>]+\\)()"
+  (concat "Stopped in [A-Za-z\\.]+,\s+" haskell-filepos-regex)
   "Regular expression matching stacktrace information.
 Used to extract the current line and module being inspected."
   :type 'string
@@ -1008,49 +1017,94 @@ Returns the tracked buffer."
         (add-to-list 'haskell-pdbtrack-buffers-to-kill file-buffer)))
     file-buffer))
 
+(defun haskell-pdbtrack-search-single-line (fmt)
+    "Search backward for the formatted regex that will yield a
+single line. Make sure that any other groups in fmt are shy groups
+ie (?:...) groups. This function returns
+
+  ((point . (MATCH-BEGINNING . MATCH-END))
+   (file . FNAME)
+   (begin . ((line . LINE) (col . COL)))
+   (end . ((line . LINE) (col . COL))))
+
+So both instances of LINE will be the same as the  format is
+
+<fname>:<line>:<begin col>-<end col>"
+  (save-excursion
+    (save-match-data
+      (when (re-search-backward
+             (format fmt "\\([^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)-\\([[:digit:]]+\\)")
+             nil t)
+        (let ((file-name (match-string-no-properties 1))
+              (line (string-to-number (match-string-no-properties 2)))
+              (begin-col (string-to-number (match-string-no-properties 3)))
+              (end-col (string-to-number (match-string-no-properties 4)))
+              (match-end (match-end 0))
+              (match-beg (match-beginning 0)))
+          `((match-range (,match-beg . ,match-end))
+            (file-name . ,file-name)
+            (begin . ((line . ,line) (col . ,begin-col)))
+            (end . ((line . ,line) (col . ,end-col)))))))))
+
+(defun haskell-pdbtrack-search-multi-line (fmt)
+  "Search backward for the formatted regex that will yield a
+multiline. Make sure that any other groups in fmt are shy groups
+ie (?:...) groups. This function returns
+
+  ((match-range . (MATCH-BEGINNING . MATCH-END))
+   (file . FNAME)
+   (begin . ((line . LINE) (col . COL)))
+   (end . ((line . LINE) (col . COL))))
+
+The format will be
+
+<file name>:(<begin line>,<begin col>)-(<end line>,<end col>).
+
+If nothing is found return nil. POINT is the beginning of the match"
+  (let ((regex
+         (format
+          fmt
+          "\\([^:[:space:]]+\\):(\\([[:digit:]]+\\),\\([[:digit:]]+\\))-(\\([[:digit:]]+\\),\\([[:digit:]]+\\))")))
+    (save-excursion
+      (save-match-data
+        (when (re-search-backward
+               regex
+               nil t)
+          (let ((file-name (match-string-no-properties 1))
+                (begin-line (string-to-number (match-string-no-properties 2)))
+                (begin-col (string-to-number (match-string-no-properties 3)))
+                (end-line (string-to-number (match-string-no-properties 4)))
+                (end-col (string-to-number (match-string-no-properties 5)))
+                (match-end (match-end 0))
+                (match-beg (match-beginning 0)))
+            `((match-range (,match-beg . ,match-end))
+              (file-name . ,file-name)
+              (begin . ((line . ,begin-line) (col . ,begin-col)))
+              (end . ((line . ,end-line) (col . ,end-col))))))))))
+
+(require 'dash)
+(defun haskell-pdbtrack-search-marker (fmt)
+  (let ((sl (haskell-pdbtrack-search-multi-line fmt))
+        (ml (haskell-pdbtrack-search-single-line fmt)))
+    (cond
+     ((null ml) sl)
+     ((null sl) ml)
+     (t (let ((ml-pt (caadr (assq 'match-range ml)))
+              (sl-pt (caadr (assq 'match-range sl))))
+          (if (< ml-pt sl-pt) sl ml))))))
+
 (defun haskell-pdbtrack-comint-output-filter-function (output)
   "Move overlay arrow to current pdb line in tracked buffer.
 Argument OUTPUT is a string with the output from the comint process."
   (when (and haskell-pdbtrack-activate (not (string= output "")))
     (let* ((full-output (ansi-color-filter-apply
                          (buffer-substring comint-last-input-end (point-max))))
-           (line-number)
-           (file-name
-            (with-temp-buffer
-              (insert full-output)
-              ;; When the debugger encounters a pdb.set_trace()
-              ;; command, it prints a single stack frame.  Sometimes
-              ;; it prints a bit of extra information about the
-              ;; arguments of the present function.  When ipdb
-              ;; encounters an exception, it prints the _entire_ stack
-              ;; trace.  To handle all of these cases, we want to find
-              ;; the _last_ stack frame printed in the most recent
-              ;; batch of output, then jump to the corresponding
-              ;; file/line number.
-              (goto-char (point-max))
-              (when (re-search-backward haskell-pdbtrack-stacktrace-info-regexp nil t)
-                (setq line-number (string-to-number
-                                   (match-string-no-properties 2)))
-                (match-string-no-properties 1)))))
-      (if (and file-name line-number)
-          (let* ((tracked-buffer
-                  (haskell-pdbtrack-set-tracked-buffer file-name))
-                 (shell-buffer (current-buffer))
-                 (tracked-buffer-window (get-buffer-window tracked-buffer))
-                 (tracked-buffer-line-pos))
-            (with-current-buffer tracked-buffer
-              (set (make-local-variable 'overlay-arrow-string) "=>")
-              (set (make-local-variable 'overlay-arrow-position) (make-marker))
-              (setq tracked-buffer-line-pos (progn
-                                              (goto-char (point-min))
-                                              (forward-line (1- line-number))
-                                              (point-marker)))
-              (when tracked-buffer-window
-                (set-window-point
-                 tracked-buffer-window tracked-buffer-line-pos))
-              (set-marker overlay-arrow-position tracked-buffer-line-pos))
-            (pop-to-buffer tracked-buffer)
-            (switch-to-buffer-other-window shell-buffer))
+           (break (with-temp-buffer
+                     (insert full-output)
+                     (goto-char (point-max))
+                     (haskell-pdbtrack-search-marker "Stopped in .*, %s"))))
+      (if break
+          (haskell--set-pdb-marker break)
         (when haskell-pdbtrack-tracked-buffer
           (with-current-buffer haskell-pdbtrack-tracked-buffer
             (set-marker overlay-arrow-position nil))
@@ -1060,6 +1114,54 @@ Argument OUTPUT is a string with the output from the comint process."
           (setq haskell-pdbtrack-tracked-buffer nil
                 haskell-pdbtrack-buffers-to-kill nil)))))
   output)
+
+(defun haskell--set-pdb-marker (break)
+  (let* ((begin-line-number (cdr (assq 'line (cdr (assq 'begin break)))))
+         (end-line-number (cdr (assq 'line (cdr (assq 'end break)))))
+         (begin-col (cdr (assq 'col (cdr (assq 'begin break)))))
+         (end-col (cdr (assq 'col (cdr (assq 'end break)))))
+         (tracked-buffer
+          (haskell-pdbtrack-set-tracked-buffer (cdr (assq 'file-name break))))
+         (shell-buffer (current-buffer))
+         (tracked-buffer-window (get-buffer-window tracked-buffer))
+         (tracked-buffer-line-pos))
+    (with-current-buffer tracked-buffer
+      (let ((begin-pos (save-excursion
+                         (goto-char (point-min))
+                         (move-beginning-of-line begin-line-number)
+                         (forward-char (-1 begin-col))
+                         (point-marker)))
+            (end-pos (save-excursion
+                         (goto-char (point-min))
+                         (move-beginning-of-line end-line-number)
+                         (forward-char (-1 end-col))
+                         (point-marker))))
+          (set (make-local-variable 'overlay-arrow-string) "=>")
+      (set (make-local-variable 'overlay-arrow-position) (make-marker))
+      (setq tracked-buffer-line-pos begin-pos)
+      (when tracked-buffer-window
+        (set-window-point
+         tracked-buffer-window tracked-buffer-line-pos))
+      (set-marker overlay-arrow-position tracked-buffer-line-pos)
+      (pulse-momentary-highlight-region begin-pos end-pos)))
+    (pop-to-buffer tracked-buffer)
+    (switch-to-buffer-other-window shell-buffer)))
+
+
+(defun haskell-pdbtrack-reposition ()
+  "Look upwards for the last stop and reposition the cursor there."
+  (interactive)
+  (let ((break (haskell-pdbtrack-search-marker "Stopped in .*, %s")))
+  (if break
+      (haskell--set-pdb-marker break)
+    (error "Couldn't find 'stopped in ...'"))))
+;; (defun haskell-comint-jump-to-prev-filepos ()
+;;   (interactive)
+;;   (format "\\[%s\\]" haskell-filepos-regex) nil t)
+;;       (haskell--set-pdb-marker (match-string-no-properties 1)
+;;                                (string-to-number
+;;                                 (or (match-string-no-properties 2)
+;;                                     (match-string-no-properties 3)))))))
 
 (provide 'fd-haskell-comint)
 ;;; fd-haskell-comint.el ends here.

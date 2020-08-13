@@ -73,6 +73,7 @@
 (timed-require 'fd-company)
 (timed-require 'fd-aspell)
 (timed-require 'fd-idris)
+(timed-require 'fd-floskell)
 ; (timed-require 'fd-emms)
 
 (setq enable-local-variables :all)
@@ -87,7 +88,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(highlight ((t (:background nil :underline t :weight bold))))
- '(highlight-symbol-face ((t (:underline t))) t))
+ '(highlight-symbol-face ((t (:underline t)))))
 (put 'narrow-to-page 'disabled nil)
 
 (custom-set-variables
@@ -101,7 +102,9 @@
  '(package-selected-packages (quote (edit-indirect)))
  '(safe-local-variable-values
    (quote
-    ((compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
+    ((compile-root . "/Users/drninjabatman/Documents/")
+     (compile-root . "/Users/drninjabatman/Projects/uoe/fluidb/")
+     (compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
      (compile-root . "/Users/drninjabatman/.emacs.d/")
      (compile-root . "/home/drninjabatman/Projects/cv-for-me/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")

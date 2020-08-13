@@ -93,7 +93,7 @@ string."
 
 ;;; Make sure emails are visible.
 (setq shr-color-visible-luminance-min 70)
-
+(setq notmuch-show-part-button-default-action #'notmuch-show-interactively-view-part)
 ;; For smtp errors try using the csail server defined in fd-mail.el
 
 (setq notmuch-show-only-matching-messages nil)
