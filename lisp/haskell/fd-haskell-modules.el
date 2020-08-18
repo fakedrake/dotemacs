@@ -365,7 +365,7 @@
 (defun haskell-cabal-get-key (key)
   (haskell-cabal-subsection-entry-list (haskell-cabal-section) key))
 
-(defun haskell-module-name (&optional src-dir)
+(defun haskell-module-name (fname &optional src-dir)
   (replace-regexp-in-string
    "\\.hs$" ""
    (replace-regexp-in-string
@@ -380,7 +380,7 @@
           (car
            (with-cabal-file-buffer
             (mapcar
-             'haskell-module-name
+             (apply-partially 'haskell-module-name fname)
              (delete-if-not
               (lambda (x) (string-prefix-p x fname))
               (mapcar

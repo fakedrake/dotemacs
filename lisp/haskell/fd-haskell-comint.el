@@ -611,47 +611,6 @@ variable.
        haskell-shell-prompt-debug-regexp)
   (set (make-local-variable 'gud-minor-mode) 'haskell-comint))
 
-;;; Haskell comint rudementary GUD-like support
-(require 'gud)
-
-;;;###autoload
-(defun haskell-comint-set-breakpoint (&optional process msg)
-  "Set breakpoint to line for the last created comint using PROCESS.
-If we fail show message MSG."
-  (interactive (list nil t))
-  (let ((gud-comint-buffer
-         (process-buffer
-          (or process (haskell-shell-get-process-or-error msg)))))
-      (gud-call ":break %m %l %y")))
-
-(advice-add 'gud-format-command
-               :around 'haskell-comint-gud-format-handle-module-ad)
-
-(defun haskell-comint-gud-format-handle-module-ad (old-fn str &optional arg)
-  "Handle %m as module in STR and just pass on ARG."
-  (funcall old-fn
-   (let ((insource (not (eq (current-buffer) gud-comint-buffer))))
-     (replace-regexp-in-string
-      "%y"
-      (int-to-string (save-restriction (widen) (current-column)))
-      (replace-regexp-in-string
-       "%m"
-       (haskell-comint-gud-find-module (buffer-file-name))
-       str)))
-   arg))
-
-(defun haskell-comint-gud-find-module (f)
-  "Find the module name of file F."
-  (save-excursion
-    (save-restriction
-      (save-match-data
-        (with-current-buffer (get-file-buffer f)
-          (goto-char (point-min))
-          (if (re-search-forward "^module[[:space:]]+\\([^[:space:](]+\\)" nil t nil)
-              (match-string-no-properties 1)
-            (user-error "Couldn't find module statement.")))))))
-
-
 ;;; Send output
 ;;;###autoload
 (defvar haskell-shell--loaded-file nil)
@@ -830,14 +789,14 @@ This is the dual operation to `haskell-string-literal-encode'."
       (substring estr 1 -1) ;; optimized fast-path for trivial strings
     (let ((s (if no-quotes ;; else: do general decoding
                  estr
-               (if (string-match-p "\\`\".*\"\\'" estr)
-                   (substring estr 1 -1)
-                 (error "String literal must be delimited by quotes"))))
+               (when (string-match-p "\\`\".*\"\\'" estr)
+                   (substring estr 1 -1))))
           (case-fold-search nil))
-      (replace-regexp-in-string
-       haskell-string-literal-escapes-regexp
-       #'haskell-string-literal-decode1
-       s t t))))
+      (and s
+           (replace-regexp-in-string
+            haskell-string-literal-escapes-regexp
+            #'haskell-string-literal-decode1
+            s t t)))))
 
 ;;;###autoload
 (defun haskell-shell-complete-at-point ()
@@ -857,7 +816,7 @@ completion."
       (when rawstr
         ;; parse REPL response if any
         (let* ((s1 (split-string rawstr "\r?\n" t))
-               (cs (mapcar #'haskell-string-literal-decode (cdr s1)))
+               (cs (delete-if 'null (mapcar #'haskell-string-literal-decode (cdr s1))))
                (h0 (car s1))) ;; "<limit count> <all count> <unused string>"
           (unless (string-match
                    (rx
@@ -1083,15 +1042,20 @@ If nothing is found return nil. POINT is the beginning of the match"
               (end . ((line . ,end-line) (col . ,end-col))))))))))
 
 (require 'dash)
-(defun haskell-pdbtrack-search-marker (fmt)
-  (let ((sl (haskell-pdbtrack-search-multi-line fmt))
-        (ml (haskell-pdbtrack-search-single-line fmt)))
-    (cond
-     ((null ml) sl)
-     ((null sl) ml)
-     (t (let ((ml-pt (caadr (assq 'match-range ml)))
-              (sl-pt (caadr (assq 'match-range sl))))
-          (if (< ml-pt sl-pt) sl ml))))))
+(defun haskell-pdbtrack-search-markers (fmts)
+  (cl-flet ((bgn (i) (caadr (assq 'match-range i))))
+    (let ((markers (concatenate
+                    'list
+                    (mapcar #'haskell-pdbtrack-search-single-line fmts)
+                    (mapcar #'haskell-pdbtrack-search-multi-line fmts)))
+          (ret))
+      (dolist (m markers)
+        (when (and m (or (null ret) (< (bgn ret) (bgn m))))
+          (setq ret m)))
+      ret)))
+
+(defcustom haskell-pdbtrack-filepos-fmts '("Stopped in .*, %s" "Logged breakpoint at %s" "Stopped at %s")
+  "Format the filetype that is emitted by the debugger")
 
 (defun haskell-pdbtrack-comint-output-filter-function (output)
   "Move overlay arrow to current pdb line in tracked buffer.
@@ -1102,7 +1066,7 @@ Argument OUTPUT is a string with the output from the comint process."
            (break (with-temp-buffer
                      (insert full-output)
                      (goto-char (point-max))
-                     (haskell-pdbtrack-search-marker "Stopped in .*, %s"))))
+                     (haskell-pdbtrack-search-markers haskell-pdbtrack-filepos-fmts))))
       (if break
           (haskell--set-pdb-marker break)
         (when haskell-pdbtrack-tracked-buffer
@@ -1129,15 +1093,16 @@ Argument OUTPUT is a string with the output from the comint process."
       (let ((begin-pos (save-excursion
                          (goto-char (point-min))
                          (move-beginning-of-line begin-line-number)
-                         (forward-char (-1 begin-col))
+                         (forward-char (1- begin-col))
                          (point-marker)))
             (end-pos (save-excursion
                          (goto-char (point-min))
                          (move-beginning-of-line end-line-number)
-                         (forward-char (-1 end-col))
+                         (forward-char end-col)
                          (point-marker))))
           (set (make-local-variable 'overlay-arrow-string) "=>")
       (set (make-local-variable 'overlay-arrow-position) (make-marker))
+      (set (make-local-variable 'pulse-delay) 0.1)
       (setq tracked-buffer-line-pos begin-pos)
       (when tracked-buffer-window
         (set-window-point
@@ -1151,10 +1116,18 @@ Argument OUTPUT is a string with the output from the comint process."
 (defun haskell-pdbtrack-reposition ()
   "Look upwards for the last stop and reposition the cursor there."
   (interactive)
-  (let ((break (haskell-pdbtrack-search-marker "Stopped in .*, %s")))
+  (let ((break (haskell-pdbtrack-search-markers haskell-pdbtrack-filepos-fmts)))
   (if break
       (haskell--set-pdb-marker break)
     (error "Couldn't find 'stopped in ...'"))))
+
+(defun haskell-comint-set-breakpoint ()
+  (interactive)
+  (haskell-shell-send-string
+   (format ":break %s %d %d"
+           (haskell-declared-module-name)
+           (current-line)
+           (current-column))))
 ;; (defun haskell-comint-jump-to-prev-filepos ()
 ;;   (interactive)
 ;;   (format "\\[%s\\]" haskell-filepos-regex) nil t)
@@ -1162,6 +1135,58 @@ Argument OUTPUT is a string with the output from the comint process."
 ;;                                (string-to-number
 ;;                                 (or (match-string-no-properties 2)
 ;;                                     (match-string-no-properties 3)))))))
+
+(setq haskell-pdbtrack--last-step-style ":step")
+(setq haskell-pdbtrack--code-window nil)
+(setq haskell-pdbtrack-functions
+      '(("n" . haskell-pdbtrack-next)
+        ("f" . haskell-pdbtrack-forward)
+        ("b" . haskell-pdbtrack-back)
+        ("m" . haskell-pdbtrack-stepmodule)
+        ("r" . haskell-pdbtrack-step-dwim)
+        ("c" . haskell-pdbtrack-step-continue)
+        ("s" . haskell-pdbtrack-step)))
+
+(define-minor-mode haskell-comint-pdbtrack
+  "Mode to be active in the haskell files."
+  :lighter "haskell-dbg "
+  :keymap (let ((map (make-sparse-keymap)))
+    (dolist (i haskell-pdbtrack-functions)
+      (define-key map (kbd (format "C-x C-a %s" (car i))) (cdr i)))
+    map)
+  nil)
+(setq haskell-pdbtrack-transient-map
+      (let ((map (make-sparse-keymap)))
+        (dolist (i haskell-pdbtrack-functions)
+          (define-key map (kbd (car i)) (cdr i)))
+        map))
+(defun haskell-pdbtrack-step-dwim (&optional step-style)
+  (interactive)
+  (setq haskell-pdbtrack--last-step-style
+        (or step-style haskell-pdbtrack--last-step-style))
+  (haskell-shell-send-string haskell-pdbtrack--last-step-style)
+  (set-transient-map haskell-pdbtrack-transient-map))
+(defun haskell-pdbtrack-next ()
+  (interactive)
+  (haskell-pdbtrack-step-dwim ":steplocal"))
+(defun haskell-pdbtrack-continue ()
+  (interactive)
+  (haskell-pdbtrack-step-dwim ":continue"))
+(defun haskell-pdbtrack-step ()
+  (interactive)
+  (haskell-pdbtrack-step-dwim ":step"))
+(defun haskell-pdbtrack-stepmodule ()
+  (interactive)
+  (haskell-pdbtrack-step-dwim ":stepmodule"))
+(defun haskell-pdbtrack-forward ()
+  (interactive)
+  (haskell-pdbtrack-step-dwim ":forward"))
+(defun haskell-pdbtrack-back ()
+  (interactive)
+  (haskell-shell-send-string ":back"))
+(defun haskell-pdbtrack-forward ()
+  (interactive)
+  (haskell-shell-send-string ":back"))
 
 (provide 'fd-haskell-comint)
 ;;; fd-haskell-comint.el ends here.
