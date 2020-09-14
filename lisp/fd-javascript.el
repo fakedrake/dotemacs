@@ -1,5 +1,5 @@
 (require 'js2-mode)
-(require 'nodejs-repl)
+; (require 'nodejs-repl)
 
 (defun my-js-newline-and-indent ()
   "Append a newline first if the cursor is between { and }."
@@ -17,9 +17,9 @@
   (setq js2-basic-offset 2)
   (rainbow-delimiters-mode 1)
   (define-key js2-mode-map (kbd "C-j") 'my-js-newline-and-indent)
-  (define-key js2-mode-map (kbd "C-c C-e") 'nodejs-repl-eval-buffer)
-  (define-key js2-mode-map (kbd "C-M-x") 'nodejs-repl-eval-function)
-  (define-key js2-mode-map (kbd "C-c C-s") 'nodejs-repl-eval-dwim)
+;  (define-key js2-mode-map (kbd "C-c C-e") 'nodejs-repl-eval-buffer)
+;  (define-key js2-mode-map (kbd "C-M-x") 'nodejs-repl-eval-function)
+;  (define-key js2-mode-map (kbd "C-c C-s") 'nodejs-repl-eval-dwim)
   (define-key js2-mode-map (kbd "C-c C-t") 'js2-toggle-source-test)
   (define-key js2-mode-map (kbd "C-c s s") 'js2-set-self)
   (define-key js2-mode-map (kbd "C-c s d") 'js2-set-default)
