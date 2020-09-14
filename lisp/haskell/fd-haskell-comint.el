@@ -938,16 +938,6 @@ the `buffer-name'."
   :group 'haskell-comint
   :safe 'booleanp)
 
-
-
-(defcustom haskell-pdbtrack-stacktrace-info-regexp
-  (concat "Stopped in [A-Za-z\\.]+,\s+" haskell-filepos-regex)
-  "Regular expression matching stacktrace information.
-Used to extract the current line and module being inspected."
-  :type 'string
-  :group 'haskell-comint
-  :safe 'stringp)
-
 (defvar haskell-pdbtrack-tracked-buffer nil
   "Variable containing the value of the current tracked buffer.
 Never set this variable directly, use
@@ -993,7 +983,7 @@ So both instances of LINE will be the same as the  format is
     (save-match-data
       (when (re-search-backward
              (format fmt "\\([^:[:space:]]+\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\)-\\([[:digit:]]+\\)")
-             nil t)
+             haskell--search-bound t)
         (let ((file-name (match-string-no-properties 1))
               (line (string-to-number (match-string-no-properties 2)))
               (begin-col (string-to-number (match-string-no-properties 3)))
@@ -1004,6 +994,8 @@ So both instances of LINE will be the same as the  format is
             (file-name . ,file-name)
             (begin . ((line . ,line) (col . ,begin-col)))
             (end . ((line . ,line) (col . ,end-col)))))))))
+
+(defconst haskell--search-bound nil)
 
 (defun haskell-pdbtrack-search-multi-line (fmt)
   "Search backward for the formatted regex that will yield a
@@ -1028,7 +1020,7 @@ If nothing is found return nil. POINT is the beginning of the match"
       (save-match-data
         (when (re-search-backward
                regex
-               nil t)
+               haskell--search-bound t)
           (let ((file-name (match-string-no-properties 1))
                 (begin-line (string-to-number (match-string-no-properties 2)))
                 (begin-col (string-to-number (match-string-no-properties 3)))
@@ -1078,6 +1070,37 @@ Argument OUTPUT is a string with the output from the comint process."
           (setq haskell-pdbtrack-tracked-buffer nil
                 haskell-pdbtrack-buffers-to-kill nil)))))
   output)
+
+
+
+(defun haskell-proftrack-next ()
+  (interactive)
+  (haskell-proftrack-goto-next)
+  (haskell-proftrack-reposition))
+(defun haskell-proftrack-previous ()
+  (interactive)
+  (haskell-proftrack-goto-previous)
+  (haskell-proftrack-reposition))
+(defun haskell-proftrack-forward ()
+  (interactive)
+  (forward-line 1)
+  (back-to-indentation)
+  (haskell-proftrack-reposition))
+(defun haskell-proftrack-back ()
+  (interactive)
+  (forward-line -1)
+  (back-to-indentation)
+  (haskell-proftrack-reposition))
+(defun haskell-proftrack-reposition ()
+  (interactive)
+  (save-match-data
+    (save-excursion
+      (end-of-line)
+      (let ((haskell--search-bound (save-excursion (beginning-of-line) (point)))
+            (haskell-pdbtrack-filepos-fmts
+             '("[[:space:]]*[^[:space:]]+[[:space:]]+[^[:space:]]+[[:space:]]+%s")))
+        (haskell-pdbtrack-reposition)
+        (set-transient-map haskell-proftrack-transient-map)))))
 
 (defun haskell--set-pdb-marker (break)
   (let* ((begin-line-number (cdr (assq 'line (cdr (assq 'begin break)))))
@@ -1146,8 +1169,43 @@ Argument OUTPUT is a string with the output from the comint process."
         ("r" . haskell-pdbtrack-step-dwim)
         ("c" . haskell-pdbtrack-step-continue)
         ("s" . haskell-pdbtrack-step)))
+(setq haskell-proftrack-functions
+      '(("f" . haskell-proftrack-forward)
+        ("b" . haskell-proftrack-back)
+        ("n" . haskell-proftrack-next)
+        ("p" . haskell-proftrack-previous)
+        ("C-p" . haskell-proftrack-goto-previous)
+        ("C-n" . haskell-proftrack-goto-next)
+        ("RET" . haskell-proftrack-reposition)))
 
-(define-minor-mode haskell-comint-pdbtrack
+(setq haskell-proftrack-transient-map
+      (let ((map (make-sparse-keymap)))
+        (dolist (i haskell-proftrack-functions)
+          (define-key map (kbd (car i)) (cdr i)))
+        map))
+
+(defun haskell-proftrack-goto-previous (&optional col)
+  (interactive)
+  (haskell-proftrack-goto-next -1 col))
+
+(defun haskell-proftrack-goto-next (&optional dir col)
+  "Go to the next that has at least col. DIR is 1 or nil for
+forward and -1 for backward."
+  (interactive)
+  (push-mark)
+  (let ((col (or
+              col
+              (save-excursion (back-to-indentation) (current-column)))))
+    (forward-line (or dir 1))
+    (beginning-of-line)
+    (forward-char col)
+    (while (and (looking-back "^ *") (looking-at " "))
+      (forward-line (or dir 1))
+      (beginning-of-line)
+      (forward-char col)))
+  (set-transient-map haskell-pdbtrack-transient-map))
+
+(define-minor-mode haskell-comint-pdbtrack-mode
   "Mode to be active in the haskell files."
   :lighter "haskell-dbg "
   :keymap (let ((map (make-sparse-keymap)))
@@ -1155,6 +1213,19 @@ Argument OUTPUT is a string with the output from the comint process."
       (define-key map (kbd (format "C-x C-a %s" (car i))) (cdr i)))
     map)
   nil)
+
+(setq haskell-proftrack-map
+      (let ((map (make-sparse-keymap)))
+        (dolist (i haskell-proftrack-functions)
+          (define-key map (kbd (format "C-x C-a %s" (car i))) (cdr i)))
+        map))
+
+(define-minor-mode haskell-proftrack-mode
+  "Track profile lines into the code."
+  :lighter "haskell-proftrack "
+  :keymap haskell-proftrack-map
+  nil)
+
 (setq haskell-pdbtrack-transient-map
       (let ((map (make-sparse-keymap)))
         (dolist (i haskell-pdbtrack-functions)
@@ -1187,6 +1258,39 @@ Argument OUTPUT is a string with the output from the comint process."
 (defun haskell-pdbtrack-forward ()
   (interactive)
   (haskell-shell-send-string ":back"))
+
+(defun haskell-proftrack-ellipsis ()
+  "Return propertized ellipsis content."
+  (concat " "
+          (propertize yafolding-ellipsis-content 'face 'haskell-proftrack-ellipsis-face)
+          " "))
+
+(defun haskell-proftrack-hide-region (beg end)
+  (when (> end beg)
+    (let ((before-string
+           (concat
+            (propertize " " 'display '(left-fringe right-triangle))
+            (yafolding-ellipsis)))
+          (new-overlay (make-overlay beg end)))
+      (overlay-put new-overlay 'invisible t)
+      (overlay-put new-overlay 'intangible t)
+      (overlay-put new-overlay 'evaporate t)
+      (overlay-put new-overlay 'modification-hooks
+                   (list (lambda (overlay &optional a b c d)
+                           (delete-overlay overlay))))
+      (overlay-put new-overlay 'before-string before-string)
+      (overlay-put new-overlay 'category "haskell-proftrack"))))
+
+(defun haskell-proftrack-unhide-region (beg end)
+  "Delete all yafolding overlays between BEG and END."
+  (mapcar 'delete-overlay (haskell-proftrack-get-overlays beg end)))
+(defun yafolding-get-overlays (beg end)
+  "Get all overlays between BEG and END."
+  (delq nil
+        (mapcar (lambda (overlay)
+                  (and (member "haskell-proftrack" (overlay-properties overlay))
+                       overlay))
+                (overlays-in beg end))))
 
 (provide 'fd-haskell-comint)
 ;;; fd-haskell-comint.el ends here.
