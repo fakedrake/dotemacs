@@ -130,7 +130,7 @@
   (haskell-indentation-mode t)
                                         ; Proper function detection
   (haskell-decl-scan-mode 1)
-  (haskell-comint-pdbtrack 1)
+  (haskell-comint-pdbtrack-mode 1)
                                         ; Linting
   (require 'hs-lint)
   (setq hs-lint-replace-with-suggestions t)
