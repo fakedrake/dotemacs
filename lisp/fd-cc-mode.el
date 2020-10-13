@@ -38,7 +38,7 @@ at least one .cpp file in the same directory."
                                    :maxlines (or 1 5))))))
     (when symbol symbol-text)))
 
-(add-to-list 'flycheck-clang-warnings "pedantic")
+; (add-to-list 'flycheck-clang-warnings "pedantic")
 
 (defun fakedrake-c/c++-mode-init ()
   (irony-mode)

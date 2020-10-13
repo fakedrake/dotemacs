@@ -58,7 +58,7 @@
         (custom-theme-set-faces
          'naquadah
          ; `(default ((t (:family "Ubuntu Mono" :background "#262B2C"))))
-         `(default ((t (:family "Fira Code" :background "#262B2C"))))
+         `(default ((t (:family "Fira Code" :background "#262B2C" :height 95))))
          `(mode-line ((t (:height 1.1 :background "gray30"))))
          `(highlight ((t (:background nil :underline t :weight bold))))
          `(minibuffer-prompt ((t (:foreground "orange1"))))

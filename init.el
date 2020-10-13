@@ -25,9 +25,6 @@
 
 (load-file "~/.emacs.d/lisp/fd-perliminaries.el")
 
-(if (not (file-exists-p "~/.emacs.d/lisp/fd-personal.el"))
-    (error "Make lisp/fd-personal.el or we will be missig: my-znc-nick, my-znc-password, my-znc-fullname")
-  (timed-require 'fd-personal))
 (when (eq system-type 'darwin) ;; mac specific settings
   (timed-require 'fd-macosx))
 (timed-require 'fd-el-get)
@@ -50,22 +47,22 @@
 (timed-require 'fd-tags)
 (timed-require 'fd-lisp)
 (timed-require 'fd-cc-mode)
-(timed-require 'fd-opengl)
-(timed-require 'fd-prolog)
-(timed-require 'fd-vimperator)
-(timed-require 'fd-org)
+; (timed-require 'fd-opengl)
+; (timed-require 'fd-prolog)
+; (timed-require 'fd-vimperator)
+; (timed-require 'fd-org)
 (timed-require 'fd-midnight)
 (timed-require 'fd-dired)
 ; (timed-require 'fd-term)
 (timed-require 'fd-compilation)
-(timed-require 'fd-imenu)
-(timed-require 'fd-codebender)
+; (timed-require 'fd-imenu)
+; (timed-require 'fd-codebender)
 (timed-require 'fd-sql)
-(timed-require 'fd-agenda)
+; (timed-require 'fd-agenda)
 (timed-require 'fd-notify)
 (timed-require 'fd-projects)
 (timed-require 'fd-haskell)
-(timed-require 'fd-jstest)
+; (timed-require 'fd-jstest)
 (timed-require 'fd-image)
 (timed-require 'fd-git)
 (timed-require 'fd-eshell)
@@ -75,7 +72,8 @@
 (timed-require 'fd-mail)
 (timed-require 'fd-company)
 (timed-require 'fd-aspell)
-(timed-require 'fd-idris)
+; (timed-require 'fd-idris)
+; (timed-require 'fd-floskell)
 ; (timed-require 'fd-emms)
 
 (setq enable-local-variables :all)
@@ -98,10 +96,15 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(org-agenda-files '("~/Projects/UoE/fluidb/caching.org" "~/.track.org"))
- '(package-selected-packages '(edit-indirect))
+ '(org-agenda-files
+   (quote
+    ("~/Projects/UoE/fluidb/caching.org" "~/.track.org")))
+ '(package-selected-packages (quote (lsp-mode edit-indirect)))
  '(safe-local-variable-values
-   '((compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
+   (quote
+    ((compile-root . "/Users/drninjabatman/Documents/")
+     (compile-root . "/Users/drninjabatman/Projects/uoe/fluidb/")
+     (compile-root . "/Users/drninjabatman/.emacs.d/el-get/haskell-mode/")
      (compile-root . "/Users/drninjabatman/.emacs.d/")
      (compile-root . "/home/drninjabatman/Projects/cv-for-me/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/resources/include/")
@@ -113,5 +116,5 @@
      (compile-root . "/Users/drninjabatman/Downloads/")
      (compile-root . "/Users/drninjabatman/Projects/UoE/fluidb/")
      (compile-root . "/Users/drninjabatman/Documents/Inf2A_Prac1_Marking/")
-     (compile-root . "/Users/drninjabatman/Projects/advent/")))
- '(tramp-syntax 'default nil (tramp)))
+     (compile-root . "/Users/drninjabatman/Projects/advent/"))))
+ '(tramp-syntax (quote default) nil (tramp)))

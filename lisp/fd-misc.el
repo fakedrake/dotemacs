@@ -343,7 +343,7 @@ ignore buffers with."
 ;; (set-language-environment "UTF-8")
 ;; (set-default-coding-systems 'utf-8)
 (global-prettify-symbols-mode 1)
-(set-exec-path-from-shell-PATH)
+; (set-exec-path-from-shell-PATH)
 (global-unset-key (kbd "M-`"))
 
 (windmove-default-keybindings)

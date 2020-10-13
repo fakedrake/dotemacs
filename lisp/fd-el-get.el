@@ -25,10 +25,7 @@
         org-caldav
         oauth2
         irony-mode
-        google-translate
-        ; rtags
         sx
-        ; tree-mode
         dictionary
         go-mode
         rainbow-delimiters
@@ -37,9 +34,7 @@
 	s
 	pkg-info
 	request
-        auctex
-        idris-mode
-        scala-mode
+	auctex
 
 	;; ;; Elisp hepers
 	f
@@ -51,50 +46,36 @@
 
 	;; Auto Complete packages
 	yasnippet
+        yasnippet-snippets
         company-mode
 
 	;; themes I like
 	naquadah-theme
 
-	;; erc
-	erc-highlight-nicknames
-
 	;; Misc
 	highlight-symbol
-	lua-mode
-	textile-mode
 	haskell-mode
-        hindent
         hs-lint
 	js2-mode
-	coffee-mode
         flymake-jslint
 	json-mode
 	graphviz-dot-mode
         queue
-	cider
-	clojure-mode
-        nodejs-repl
 	cmake-mode
-	multi-term
 	yaml-mode
-	vimperator-mode
 	c-eldoc
 	gist
 	org-mode
-        ; org-ref
-        cdlatex-mode
 	markdown-mode
 	ggtags
 	magit
 	bm
 	compilation-setup
         google-c-style
-        web-mode
         dtrace-script-mode
-        proof-general
+        ; proof-general
         skewer-mode
-        ein
+        rustic
 	))
 
 (setq
@@ -103,10 +84,11 @@
    zencoding-mode
    python-pep8
 
-   (:name vimperator-mode
-	  :description "Edit vimperator files"
+   (:name rustic
+	  :description "Rustic"
 	  :type github
-	  :pkgname "xcezx/vimperator-mode")
+          :depends (dash f ht let-alist markdown-mode projectile s seq spinner xterm-color)
+	  :pkgname "brotzeit/rustic")
    (:name org-mode
 	  :description "Just my fork of org mode"
 	  :type github

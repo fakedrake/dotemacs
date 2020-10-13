@@ -36,7 +36,15 @@
     (beginning-of-buffer)
     (replace-regexp "^filesize:[0-9]+| " "")))
 
+(defun current-line-string (&optional pt)
+  (save-excursion
+    (when pt (goto-char pt))
+    (buffer-substring-no-properties
+     (progn (beginning-of-line) (point))
+     (progn (end-of-line) (point)))))
+
 (defun current-line (&optional pt)
+  "Current line number"
   (count-lines
    (point-min)
    (funcall (if (/= (point) (point-max)) '1+ 'identity) (or pt (point)))))

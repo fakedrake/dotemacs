@@ -1,31 +1,6 @@
 ;; GUD
 ;;
 ;; M-x gud-ghci<RET>stack ghci
-(defmacro with-gud-comint-layer-light (&rest body)
-  "Run a gud command using haskell-interactive rather than
-comint."
-  `(let ((comint-prompt-regexp haskell-prompt-regexp)
-         (gud-comint-buffer (haskell-interactive-buffer)))
-     (flet ((comint-dynamic-complete-filename () (error "Unsupported completion"))
-            (comint-input-sender () (error "Unsupported, bad gud mode"))
-            (comint-interrupt-subjob () (error "Should support"))
-            (comint-line-beginning-position () (error "Unsupported completion"))
-            (comint-output-filter (proc str) (haskell-process-filter proc str))
-            (comint-stop-subjob () (error "Unsupported, bad target name"))
-            (comint-update-fence ())    ; Internal to comint
-            (comint-send-string (proc str) (haskell-process-send-string proc str))
-            (make-comint (a b c d e) (haskell-session))
-            (gdb-restore-windows () (error "Implement gdb-restore-windows")))
-       ,@body)))
-
-(defmacro haskell-gud-def (func cmd key &optional doc)
-  "Define a gud command like gud-def but the command will use
-haskell-interactive rather than comint."
-  (let ((sym (gensym (symbol-name func))))
-    `(progn
-       (defun ,sym (&rest args)
-         (with-gud-comint-layer-light (apply ,func args)))
-       (gud-def ,sym ,cmd ,key ,doc))))
 
 (defun gud-display-frame ()
   "Find and obey the last filename-and-line marker from the debugger.
@@ -87,125 +62,34 @@ Obeying it means displaying in another window the specified file and line."
   string)
 
 (defun gud-ghci ()
+  "Run the gud interpreter."
   (interactive)
-  (with-gud-comint-layer-light
-   (when (and gud-comint-buffer
-	      (buffer-name gud-comint-buffer)
-	      (get-buffer-process gud-comint-buffer)
-	      (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
-     (gdb-restore-windows)
-     (error
-      "Multiple debugging requires restarting in text command mode"))
-
-   ;; (gud-common-init command-line nil 'gud-ghci-marker-filter)
-   (setq-local gud-minor-mode 'ghci)
+  (when (and gud-comint-buffer
+             (buffer-name gud-comint-buffer)
+             (get-buffer-process gud-comint-buffer)
+             (with-current-buffer gud-comint-buffer (eq gud-minor-mode 'ghci)))
+    (gdb-restore-windows)
+    (error
+     "Multiple debugging requires restarting in text command mode"))
+   (gud-common-init command-line nil 'gud-ghci-marker-filter)
+   (set (make-local-variable 'gud-minor-mode) 'pdb)
    (setq paragraph-start comint-prompt-regexp)
-   (comint-send-string (haskell-process)
-                       ":set prompt \"> \"\n:print '\\n'\n")
-
-   (haskell-gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
+   (gud-def gud-break  ":break %m %l %y" "\C-b" "Set breakpoint at current line.")
    ;; TODO: put _result=... line to minibuffer.
-   (haskell-gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
-   (haskell-gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
-   (haskell-gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
-   (haskell-gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
-   (haskell-gud-def gud-up     ":back"           "<" "Up one stack frame.")
-   (haskell-gud-def gud-down   ":forward"        ">" "Down one stack frame.")
-   (haskell-gud-def gud-run    ":trace %e"       "t" "Trace expression.")
-   (haskell-gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
-   (message "Hooks!")
-   (run-hooks 'gud-ghci-mode-hook)))
+   (gud-def gud-stepi  ":step"           "\C-s" "Step one source line with display.")
+   (gud-def gud-step   ":stepmodule"     "\C-n" "Step in the module.")
+   (gud-def gud-next   ":steplocal"      "n" "Step in the local scope.")
+   (gud-def gud-cont   ":continue"       "\C-r" "Continue with display.")
+   (gud-def gud-up     ":back"           "<" "Up one stack frame.")
+   (gud-def gud-down   ":forward"        ">" "Down one stack frame.")
+   (gud-def gud-run    ":trace %e"       "t" "Trace expression.")
+   (gud-def gud-print  ":print %e"       "\C-p" "Evaluate Guile expression at point.")
+
+   (setq gdb-first-prompt t)
+   (setq gud-running nil)
+   (run-hooks 'gud-ghci-mode-hook))
 
 (defvar gud-ghci-command-name "stack repl")
-(require 'gud)
-(defun gud-format-command (str arg)
-  (let ((insource (not (eq (current-buffer) gud-comint-buffer)))
-	(frame (or gud-last-frame gud-last-last-frame))
-	(buffer-file-name-localized
-         (and (buffer-file-name)
-              (or (file-remote-p (buffer-file-name) 'localname)
-                  (buffer-file-name))))
-	result)
-    (while (and str
-		(let ((case-fold-search nil))
-		  (string-match "\\([^%]*\\)%\\([adefFlpcmy]\\)" str)))
-      (let ((key (string-to-char (match-string 2 str)))
-	    subst)
-	(cond
-	 ((eq key ?f)
-	  (setq subst (file-name-nondirectory (if insource
-						  buffer-file-name-localized
-						(car frame)))))
-	 ((eq key ?F)
-	  (setq subst (file-name-base (if insource
-                                          buffer-file-name-localized
-                                        (car frame)))))
-	 ((eq key ?d)
-	  (setq subst (file-name-directory (if insource
-					       buffer-file-name-localized
-					     (car frame)))))
-	 ((eq key ?l)
-	  (setq subst (int-to-string
-		       (if insource
-			   (save-restriction
-			     (widen)
-			     (+ (count-lines (point-min) (point))
-				(if (bolp) 1 0)))
-			 (cdr frame)))))
-	 ((eq key ?e)
-	  (setq subst (gud-find-expr)))
-	 ((eq key ?a)
-	  (setq subst (gud-read-address)))
-	 ((eq key ?c)
-	  (setq subst
-                (gud-find-class
-                 (if insource
-                     (buffer-file-name)
-                   (car frame))
-                 (if insource
-                     (save-restriction
-                       (widen)
-                       (+ (count-lines (point-min) (point))
-                          (if (bolp) 1 0)))
-                   (cdr frame)))))
-	 ((eq key ?p)
-	  (setq subst (if arg (int-to-string arg))))
-
-         ;; My additions here
-         ((eq key ?m)
-          (setq subst
-                (gud-find-module
-                 (if insource
-                     (buffer-file-name)
-                   (car frame))
-                 (if insource
-                     (save-restriction
-                       (widen)
-                       (+ (count-lines (point-min) (point))
-                          (if (bolp) 1 0)))
-                   (cdr frame)))))
-
-         ((eq key ?y)
-          (setq subst
-                (int-to-string
-	         (if insource
-	             (save-restriction (widen) (current-column))
-	           (cdr frame))))))
-
-	(setq result (concat result (match-string 1 str) subst)))
-      (setq str (substring str (match-end 2))))
-    ;; There might be text left in STR when the loop ends.
-    (concat result str)))
-
-(defun gud-find-module (f _line)
-  (save-excursion
-    (save-restriction
-      (save-match-data
-        (with-current-buffer (get-file-buffer f)
-          (goto-char (point-min))
-          (if (re-search-forward "^module[[:space:]]+\\([^[:space:](]+\\)" nil t nil)
-              (match-string-no-properties 1)
-            ""))))))
 
 (defun haskell-debug-parse-stopped-at (string)
   "Parse the location stopped at from the given string.
