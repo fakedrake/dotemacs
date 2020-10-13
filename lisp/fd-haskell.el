@@ -11,7 +11,7 @@
 (require 'fd-haskell-modules)
 (require 'fd-haskell-test-files)
 (require 'fd-haskell-comint)
-(require 'fd-floskell)
+; (require 'fd-floskell)
 ;(require 'hindent)
 
 ;; Make sure our mode overrides interactive-haskell-mode

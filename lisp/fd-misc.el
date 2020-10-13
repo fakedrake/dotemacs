@@ -343,7 +343,7 @@ ignore buffers with."
 ;; (set-language-environment "UTF-8")
 ;; (set-default-coding-systems 'utf-8)
 (global-prettify-symbols-mode 1)
-(set-exec-path-from-shell-PATH)
+; (set-exec-path-from-shell-PATH)
 (global-unset-key (kbd "M-`"))
 
 (windmove-default-keybindings)
@@ -400,5 +400,11 @@ original function. For example
          (flet ,(mapcar* #'flet-wrap-to-flet tmp-syms bindings)
            ,@body)))))
 
+(setq gdb-display-buffer-other-frame-action
+  '(display-buffer-reuse-window
+    (reusable-frames . nil) ; Only reuse current frame
+    (inhibit-same-window . t)))
+
+(setq pop-up-frames nil)
 (require 'helm-swoop)
 (provide 'fd-misc)

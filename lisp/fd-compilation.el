@@ -147,6 +147,7 @@ the current directory. Then run compilation."
                     (apply-partially 'fd-trim ?/)
                     path-fragments "/"))))
 
+(setq enable-remote-dir-locals t)
 (defun fd-save-compilation (project-root compilation-root command)
   (find-file (fd-path-concat project-root ".dir-locals.el"))
   (save-buffer)
