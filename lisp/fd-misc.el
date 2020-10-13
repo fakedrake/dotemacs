@@ -400,5 +400,11 @@ original function. For example
          (flet ,(mapcar* #'flet-wrap-to-flet tmp-syms bindings)
            ,@body)))))
 
+(setq gdb-display-buffer-other-frame-action
+  '(display-buffer-reuse-window
+    (reusable-frames . nil) ; Only reuse current frame
+    (inhibit-same-window . t)))
+
+(setq pop-up-frames nil)
 (require 'helm-swoop)
 (provide 'fd-misc)

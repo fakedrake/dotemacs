@@ -1,6 +1,7 @@
 ;; CC-MODE
 ;; Requires: c-eldoc
-
+(require 'flycheck)
+(setq flycheck-clang-language-standard "c++20")
 (defun my-cc-newline-and-indent ()
   "Append a newline first if the cursor is between { and }."
   (interactive)
