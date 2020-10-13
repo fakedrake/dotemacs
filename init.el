@@ -11,7 +11,7 @@
               (concat (symbol-name sym)
                       " finished loading at:\t%H:%M:%S.%3N")))))
 
-(let ((default-directory 
+(let ((default-directory
 	(car
 	 (cl-remove-if-not
 	  #'file-exists-p

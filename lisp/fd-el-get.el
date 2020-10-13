@@ -19,6 +19,7 @@
 	memoize
         helm
         helm-swoop
+        recur
         ; imaxima
         htmlize
         org-caldav
@@ -27,7 +28,7 @@
         google-translate
         ; rtags
         sx
-        tree-mode
+        ; tree-mode
         dictionary
         go-mode
         rainbow-delimiters
