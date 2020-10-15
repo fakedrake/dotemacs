@@ -405,6 +405,7 @@ original function. For example
     (reusable-frames . nil) ; Only reuse current frame
     (inhibit-same-window . t)))
 
+(add-to-list 'exec-path (concat (getenv "HOME") "/.local/bin/"))
 (setq pop-up-frames nil)
 (require 'helm-swoop)
 (provide 'fd-misc)
