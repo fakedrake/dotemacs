@@ -3,7 +3,6 @@
 (add-to-list 'load-path (concat dotemacs-dir "el-get/el-get/queue"))
 (setq el-get-dir (concat dotemacs-dir "el-get"))
 (require 'package)
-(package-initialize)
 
 (unless (require 'el-get nil t)
   (url-retrieve
@@ -16,9 +15,12 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
+        transient
 	memoize
         helm
         helm-swoop
+        recur
+        ; imaxima
         htmlize
         org-caldav
         oauth2

@@ -86,12 +86,21 @@ returns non-nil if the function is to be called."
                      (when (funcall is-root ds)
                        ds))) (nreverse (s-split "/" dir t)))))))
 
+(require 'recur)
+(defun or-exists (&rest paths)
+  (recur-let
+   ((paths paths))
+   (when paths
+     (if (and (car paths) (file-directory-p (car paths)))
+         (car paths)
+       (recur (cdr paths))))))
+
 (defun fd-compilation-root (filename)
   (file-name-as-directory
-   (or (when (boundp 'compile-root) compile-root)
-       (fd-project-root filename ".dir-locals.el")
-       (fd-project-root filename)
-       filename)))
+   (or-exists (when (boundp 'compile-root) compile-root)
+              (fd-project-root filename ".dir-locals.el")
+              (fd-project-root filename)
+              filename)))
 
 (defun fd-recompile ()
   (interactive)

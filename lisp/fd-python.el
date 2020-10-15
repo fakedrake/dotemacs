@@ -85,6 +85,8 @@ prefix."
       (fd-python-jump-to-implementation)
     (fd-python-jump-to-test)))
 
+(setq python-shell-interpreter "python3")
+
 (defun fd-python-command (&optional venv)
   "Calculate the string used to execute the inferior Python process."
   (if venv (format "%s/bin/python" venv)
