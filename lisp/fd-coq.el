@@ -1,10 +1,21 @@
-;; (setq my-coq-symbols
-;;       '(("forall" . 8704)
-;;         ("->" . 8594)
-;;         ("exists" . 8707)
-;;         ("=>" . 8658)
-;;         ("False" . 8869)
-;;         ("True" . 8868)))
+(setq coq-prettify-symbols-alist
+      '(("[[" . #x2726)
+        ("]]" . #x27e7)
+        ("->" . ?→)
+        ("exists" . ?∃)
+        ("=>" . ?⇒)
+        ("forall" . ?∀)
+        (">>" . ?»)
+        ("|-" . ?⊦)
+        ("||-" . ?⊩)
+        ("|=" . ?⊧)
+        ("|<=" . ?⊑)
+        ("\\/" . ?∨)
+        ("/\\" . ?∧)
+        ("{{" . #x2983)
+        ("}}" . #x2984)))
+
+
 (defun my-coq-hook ()
   (define-key coq-mode-map (kbd "C-c C-l") 'proof-process-buffer))
 (add-hook 'coq-mode-hook 'my-coq-hook)

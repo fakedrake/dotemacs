@@ -10,6 +10,8 @@
               (concat (symbol-name sym)
                       " finished loading at:\t%H:%M:%S.%3N")))))
 
+(require 'cl)
+
 (let ((default-directory
 	(car
 	 (cl-remove-if-not
@@ -87,7 +89,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(highlight ((t (:background nil :underline t :weight bold))))
- '(highlight-symbol-face ((t (:underline t)))))
+ '(highlight-symbol-face ((t (:underline t))) t))
 (put 'narrow-to-page 'disabled nil)
 
 (custom-set-variables

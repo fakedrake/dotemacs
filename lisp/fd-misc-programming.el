@@ -124,6 +124,8 @@ function created this way."
 (setq whitespace-line-column 80)
 (global-whitespace-mode t)
 
+
+(setq narrow-to-defun-include-comments t)
 ;; (add-hook 'after-init-hook #'global-flycheck-mode)
 (provide 'fd-misc-programming)
 ;;; fd-misc-programming ends here

@@ -90,11 +90,11 @@ cannot be determined."
   :group 'MY/mode)
 
 (defvar my-vc-mode-attrs
-  '((""  . (" NoVC "  my/mode:vc-none))
-    ("-" . (" VC = "  my/mode:vc-in-sync))
-    (":" . (" VC > "  my/mode:vc-edited))
-    ("@" . (" VC + "  my/mode:vc-added))
-    ("?" . (" ?VC? "  my/mode:vc-unknown))
+  '((""  . (" ∅ "  my/mode:vc-none))
+    ("-" . (" = "  my/mode:vc-in-sync))
+    (":" . (" ≢ "  my/mode:vc-edited))
+    ("@" . (" + "  my/mode:vc-added))
+    ("?" . (" ? "  my/mode:vc-unknown))
     )
   "Lookup table to translate vc-mode character into another string/face."
   )

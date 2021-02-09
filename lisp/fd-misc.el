@@ -343,7 +343,7 @@ ignore buffers with."
 ;; (set-language-environment "UTF-8")
 ;; (set-default-coding-systems 'utf-8)
 (global-prettify-symbols-mode 1)
-; (set-exec-path-from-shell-PATH)
+(set-exec-path-from-shell-PATH)
 (global-unset-key (kbd "M-`"))
 
 (windmove-default-keybindings)
@@ -408,4 +408,12 @@ original function. For example
 (add-to-list 'exec-path (concat (getenv "HOME") "/.local/bin/"))
 (setq pop-up-frames nil)
 (require 'helm-swoop)
+
+;; (defun tramp--set-minimum-timeout (args)
+;;   (setq ((proc (car args))
+;;          (timeout (cadr args))
+;;          (regex (caddr args)))
+;;         (list proc (or timeout 30) regex)))
+;; (advice-add  #'tramp-wait-for-regexp :filter-args #'tramp--set-minimum-timeout)
+
 (provide 'fd-misc)

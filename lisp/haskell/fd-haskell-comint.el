@@ -1063,7 +1063,8 @@ Argument OUTPUT is a string with the output from the comint process."
           (haskell--set-pdb-marker break)
         (when haskell-pdbtrack-tracked-buffer
           (with-current-buffer haskell-pdbtrack-tracked-buffer
-            (set-marker overlay-arrow-position nil))
+            (when overlay-arrow-position
+              (set-marker overlay-arrow-position nil)))
           (mapc #'(lambda (buffer)
                     (ignore-errors (kill-buffer buffer)))
                 haskell-pdbtrack-buffers-to-kill)
@@ -1167,7 +1168,7 @@ Argument OUTPUT is a string with the output from the comint process."
         ("b" . haskell-pdbtrack-back)
         ("m" . haskell-pdbtrack-stepmodule)
         ("r" . haskell-pdbtrack-step-dwim)
-        ("c" . haskell-pdbtrack-step-continue)
+        ("c" . haskell-pdbtrack-continue)
         ("s" . haskell-pdbtrack-step)))
 (setq haskell-proftrack-functions
       '(("f" . haskell-proftrack-forward)

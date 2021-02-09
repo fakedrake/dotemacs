@@ -99,6 +99,8 @@ returns non-nil if the function is to be called."
   (file-name-as-directory
    (or-exists (when (boundp 'compile-root) compile-root)
               (fd-project-root filename ".dir-locals.el")
+              (fd-project-root filename "stack.yaml")
+              (fd-project-root filename "project.yaml")
               (fd-project-root filename)
               filename)))
 

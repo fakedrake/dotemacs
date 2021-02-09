@@ -1,4 +1,4 @@
-(add-to-list 'load-path (format "%s/.emacs.d/lisp/haskell" (getenv "HOME")))
+(add-to-list 'load-path (format "%s/lisp/haskell" user-emacs-directory))
 ; (add-to-list 'load-path (format "%s/.emacs.d/el-get/hindent/elisp/" (getenv "HOME")))
 (require 'haskell-indentation)
 (require 'haskell-interactive-mode)
@@ -11,7 +11,7 @@
 (require 'fd-haskell-modules)
 (require 'fd-haskell-test-files)
 (require 'fd-haskell-comint)
-; (require 'fd-floskell)
+(require 'fd-floskell)
 ;(require 'hindent)
 
 ;; Make sure our mode overrides interactive-haskell-mode
@@ -29,8 +29,8 @@
 (defvar hs-compilation-error-regex-alist
   ;; REGEX FILE-GROUP LINE-GROUP COLUMN-GROUP ERROR-TYPE LINK-GROUP
   '((haskell-error
-     "^\\(\\(.*\\.l?hs\\):\\([0-9]*\\):\\([0-9]*\\)\\): error:$"
-     2 3 4 2 1)
+     "^\\([a-z\\-0-9]*\s*>\s*\\|\\)\\(\\(.*\\.l?hs\\):\\([0-9]*\\):\\([0-9]*\\)\\): error:$"
+     3 4 5 2 2)
     (haskell-rts-stack
      "^[[:space:]]+[[:word:]]+, called at \\(\\([[:word:]]*/\\)*[[:word:]]+\\.hs\\):\\([[:digit:]]+\\):\\([[:digit:]]+\\) in "
     1 3 4)))
@@ -107,6 +107,13 @@
 
 
 (remove-hook 'haskell-mode-hook 'turn-on-haskell-doc-mode)
+(add-hook 'haskell-cabal-mode-hook 'fd-haskell-cabal-hook)
+
+(defun fd-haskell-cabal-hook ()
+  ;; Many tools require an up-to-date cabal file.
+  (setq-local revert-without-query t))
+
+
 ;;;###autoload
 (define-minor-mode drninjabatmans-haskell-mode
   "Some extras for haskell-mode."
@@ -119,8 +126,8 @@
         haskell-stylish-on-save t)
   (setq haskell-hoogle-command "hoogle --count=50")
   (setq-local comment-auto-fill-only-comments nil)
-  (when (file-exists-p "/Users/drninjabatman/Library/Haskell/bin/hasktags")
-    (setq haskell-hasktags-path "/Users/drninjabatman/Library/Haskell/bin/hasktags"))
+  (when (executable-find "hasktags")
+    (setq haskell-hasktags-path (executable-find "hasktags")))
   ;; (define-key interactive-haskell-mode-map (kbd "C-c C-l") nil)
   ;; (define-key interactive-haskell-mode-map (kbd "C-c C-t") nil)
   (define-key yas-minor-mode-map (kbd "<backtab>") 'yas-expand-from-trigger-key)
@@ -249,19 +256,23 @@
   (let ((roots (roots-with dir "stack.yaml")))
     (when roots (last roots))))
 
+(defun haskell--module-list-command (path)
+  (let* ((regex "^(module|import)[[:space:]]*((qualified[[:space:]]*)?[A-Za-z.1-9]*([[:space:]]*as[[:space:]]*[A-Za-z.1-9]*)?).*")
+         (sed-cmd (format "sed -n -E 's/%s/\\2/p'" regex))
+         (find-filter "\\( -name '.#*' -prune \\) -o -name '*.hs'")
+         (find-cmd (format "find '%s' %s -exec %s {} \\+" path find-filter sed-cmd)))
+      (format "%s | tr -s '[:space:]' | sort | uniq" find-cmd)))
+
 (defun haskell-all-project-modules ()
-  (-flatten
-   (mapcar
-   (lambda (path)
-     (split-string
-      (shell-command-to-string
-       (format
-        "find '%s' \\( -name '.#*' -prune \\) -o -name '*.hs' -exec sed -n 's/^\\(import\\|module\\)\\s*\\(qualified\\s*\\|\\)\\([a-zA-Z.]*\\).*/\\3/p' {} \\+ | sort | uniq"
-        (expand-file-name path)))))
-   (stack-root default-directory))))
+  (-flatten (mapcar
+             (lambda (path)
+               (split-string (shell-command-to-string (haskell--module-list-command path)) "\n"))
+             (stack-root default-directory))))
 
 ;;;###autoload
 (defun haskell-add-import (module)
+  "Look for imports in the project and make an autocomplete
+prompt to insert one."
   (interactive (list (completing-read
                       "Module: "
                       (haskell-all-project-modules))))
@@ -325,6 +336,11 @@ POS defaults to `point'."
   (apply old-fn r)
   (haskell-process-reset (haskell-commands-process)))
 
+
+(defun haskell-cabal--find-tags-dir-ad (old-fn &rest r)
+  (or (locate-dominating-file default-directory "stack.yaml")
+      (apply old-fn r)))
 (advice-add 'haskell-process-interrupt :around #'haskell-process-interrupt-ad)
 (advice-add 'haskell-interactive-handle-expr :around #'haskell-process-guard-idle)
+(advice-add 'haskell-process-interrupt :around #'haskell-cabal--find-tags-dir-ad)
 (provide 'fd-haskell)

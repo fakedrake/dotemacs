@@ -117,12 +117,8 @@
         mode-line-remote
         mode-line-frame-identification
         mode-line-buffer-identification
-        (which-func-mode
-         (":" which-funce-format " "))
-        "   "
-        mode-line-position
+        "  " mode-line-misc-info
         "  " mode-line-modes
-        mode-line-misc-info
         mode-line-end-spaces))
 
 (setq-default cursor-type 'box)

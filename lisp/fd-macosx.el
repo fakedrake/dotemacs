@@ -10,7 +10,7 @@
 
 ;(tabbar-mode -1)		     ; no tabbar
 ;(one-buffer-one-frame-mode -1)       ; no one-buffer-per-frame
-'(setq special-display-regexps nil)   ; do not open certain buffers in special windows/frames
+(setq special-display-regexps nil)   ; do not open certain buffers in special windows/frames
 ; (smart-frame-positioning-mode -1)  ; do not place frames behind the Dock or outside of screen boundaries
 
 (tool-bar-mode 0) ; turn off toolbar
@@ -60,5 +60,7 @@
          "find /usr/local/Cellar/emacs -name 'bin'"))
        "/emacs"))
 (setenv "EMACS" el-get-emacs)
+
+(add-to-list 'exec-path "/usr/local/bin/")
 
 (provide 'fd-macosx)

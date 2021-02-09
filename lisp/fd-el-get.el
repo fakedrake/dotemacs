@@ -15,6 +15,8 @@
 (setq my:el-get-packages
       '(;; Dependencies from who-kows-where
         flycheck
+        flycheck-haskell
+        wc-mode
         transient
 	memoize
         helm
@@ -35,6 +37,8 @@
 	pkg-info
 	request
 	auctex
+        hydra
+        org-ref
 
 	;; ;; Elisp hepers
 	f
